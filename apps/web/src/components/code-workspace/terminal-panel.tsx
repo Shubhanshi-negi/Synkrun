@@ -19,7 +19,7 @@ export function TerminalPanel({ runtime }: { runtime: WebContainerRuntime }) {
     const el = containerRef.current;
     if (!el) return;
 
-    let disposed = false;
+    const disposed = { current: false };
     let cleanup: (() => void) | undefined;
 
     void (async () => {
@@ -27,7 +27,7 @@ export function TerminalPanel({ runtime }: { runtime: WebContainerRuntime }) {
         import("@xterm/xterm"),
         import("@xterm/addon-fit"),
       ]);
-      if (disposed) return;
+      if (disposed.current) return;
 
       const term = new Terminal({
         cursorBlink: true,
@@ -65,7 +65,7 @@ export function TerminalPanel({ runtime }: { runtime: WebContainerRuntime }) {
     })();
 
     return () => {
-      disposed = true;
+      disposed.current = true;
       cleanup?.();
     };
   }, [subscribeOutput, writeInput, resize]);

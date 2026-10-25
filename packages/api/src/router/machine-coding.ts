@@ -47,7 +47,8 @@ export const machineCodingRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const f = input ?? {};
       let items = listProblemSummaries();
-      if (f.difficulty) items = items.filter((p) => p.difficulty === f.difficulty);
+      if (f.difficulty)
+        items = items.filter((p) => p.difficulty === f.difficulty);
       if (f.category) items = items.filter((p) => p.category === f.category);
       const durationMax = f.durationMax;
       if (durationMax != null) {
@@ -99,7 +100,10 @@ export const machineCodingRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const p = getProblem(input.slug);
       if (!p) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Problem not found",
+        });
       }
 
       let attempt = null;
@@ -166,7 +170,10 @@ export const machineCodingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const p = getProblem(input.slug);
       if (!p) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Problem not found",
+        });
       }
       if (ctx.session?.user) {
         await ctx.db
@@ -178,7 +185,10 @@ export const machineCodingRouter = createTRPCRouter({
             solutionRevealed: true,
           })
           .onConflictDoUpdate({
-            target: [machineCodingAttempt.userId, machineCodingAttempt.problemSlug],
+            target: [
+              machineCodingAttempt.userId,
+              machineCodingAttempt.problemSlug,
+            ],
             set: {
               solutionRevealed: true,
               // Don't demote an already-completed attempt.
@@ -198,7 +208,10 @@ export const machineCodingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const p = getProblem(input.slug);
       if (!p) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Problem not found",
+        });
       }
       await ctx.db
         .insert(machineCodingAttempt)
@@ -208,7 +221,10 @@ export const machineCodingRouter = createTRPCRouter({
           status: "in-progress",
         })
         .onConflictDoNothing({
-          target: [machineCodingAttempt.userId, machineCodingAttempt.problemSlug],
+          target: [
+            machineCodingAttempt.userId,
+            machineCodingAttempt.problemSlug,
+          ],
         });
       return { success: true };
     }),
@@ -236,7 +252,10 @@ export const machineCodingRouter = createTRPCRouter({
           completedAt: allPass ? now : null,
         })
         .onConflictDoUpdate({
-          target: [machineCodingAttempt.userId, machineCodingAttempt.problemSlug],
+          target: [
+            machineCodingAttempt.userId,
+            machineCodingAttempt.problemSlug,
+          ],
           set: {
             testsLastPassed: input.passed,
             testsLastTotal: input.total,
@@ -262,7 +281,10 @@ export const machineCodingRouter = createTRPCRouter({
           completedAt: now,
         })
         .onConflictDoUpdate({
-          target: [machineCodingAttempt.userId, machineCodingAttempt.problemSlug],
+          target: [
+            machineCodingAttempt.userId,
+            machineCodingAttempt.problemSlug,
+          ],
           set: { status: "completed", completedAt: now },
         });
       return { success: true };
@@ -285,7 +307,10 @@ export const machineCodingRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const p = getProblem(input.slug);
       if (!p) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Problem not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Problem not found",
+        });
       }
       const userId = ctx.session.user.id;
 
@@ -341,7 +366,10 @@ export const machineCodingRouter = createTRPCRouter({
           status: existing?.status ?? "in-progress",
         })
         .onConflictDoUpdate({
-          target: [machineCodingAttempt.userId, machineCodingAttempt.problemSlug],
+          target: [
+            machineCodingAttempt.userId,
+            machineCodingAttempt.problemSlug,
+          ],
           set: { roomId: room.id },
         });
 

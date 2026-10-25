@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import confetti from "canvas-confetti";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -15,7 +16,6 @@ import {
   Star,
   XCircle,
 } from "lucide-react";
-import confetti from "canvas-confetti";
 import {
   Area,
   AreaChart,
@@ -25,7 +25,6 @@ import {
   YAxis,
 } from "recharts";
 
-import type { BlockNodeData } from "~/lib/system-design/types";
 import type { WhatIfSuggestion } from "~/lib/system-design/what-if-coach";
 import { authClient } from "~/auth/client";
 import { useSignIn } from "~/components/sign-in-dialog";
@@ -74,7 +73,7 @@ export function ResultsModal() {
   // Subtle 3-star celebration. Anchored to the stars row so the burst feels
   // tied to the icons rather than dropping from the top of the screen.
   useEffect(() => {
-    if (!results || results.stars !== 3 || hasCelebrated.current) return;
+    if (results?.stars !== 3 || hasCelebrated.current) return;
     hasCelebrated.current = true;
     const el = starsRef.current;
     if (!el) return;
@@ -84,7 +83,7 @@ export function ResultsModal() {
       y: (rect.top + rect.height / 2) / window.innerHeight,
     };
     const colors = ["#fbbf24", "#f59e0b", "#a78bfa", "#f472b6"];
-    confetti({
+    void confetti({
       particleCount: 40,
       spread: 60,
       startVelocity: 28,
@@ -116,7 +115,8 @@ export function ResultsModal() {
             results,
           ),
         );
-      } catch {
+      } catch (error) {
+        console.error("Failed to generate system design suggestions:", error);
         setSuggestions([]);
       }
     }, 50);
@@ -128,10 +128,10 @@ export function ResultsModal() {
       onSuccess: () => {
         hasSaved.current = true;
         if (level) {
-          queryClient.invalidateQueries({
+          void queryClient.invalidateQueries({
             queryKey: [["systemDesign", "myAttempts"]],
           });
-          queryClient.invalidateQueries({
+          void queryClient.invalidateQueries({
             queryKey: [["systemDesign", "myProgress"]],
           });
         }
@@ -149,9 +149,9 @@ export function ResultsModal() {
           type: n.type,
           position: n.position,
           data: {
-            definitionType: (n.data).definition.type,
-            provider: (n.data).definition.name,
-            replicas: (n.data).replicas ?? 1,
+            definitionType: n.data.definition.type,
+            provider: n.data.definition.name,
+            replicas: n.data.replicas,
           },
         })),
         edges: edges.map((e) => ({
@@ -201,7 +201,7 @@ export function ResultsModal() {
       nodes: store.nodes.map((n) => ({
         ...n,
         data: {
-          ...(n.data),
+          ...n.data,
           currentRps: 0,
           currentLatencyMs: 0,
           loadPercent: 0,
@@ -241,7 +241,9 @@ export function ResultsModal() {
       aria-label="Close results"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={handleDismiss}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleDismiss(); }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") handleDismiss();
+      }}
     >
       <div
         className="bg-card mx-4 w-full max-w-xl rounded-xl border p-6 shadow-xl"
@@ -287,10 +289,12 @@ export function ResultsModal() {
 
         {/* Topology errors — invalid design, fails the level */}
         {(() => {
-          const errorItems = results.topologyWarnings.reduce<{ id: string; message: string }[]>(
-            (acc, w) => { if (w.severity === "error") acc.push(w); return acc; },
-            [],
-          );
+          const errorItems = results.topologyWarnings.reduce<
+            { id: string; message: string }[]
+          >((acc, w) => {
+            if (w.severity === "error") acc.push(w);
+            return acc;
+          }, []);
           if (errorItems.length === 0) return null;
           return (
             <div className="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3">
@@ -315,10 +319,12 @@ export function ResultsModal() {
 
         {/* Topology warnings */}
         {(() => {
-          const warnItems = results.topologyWarnings.reduce<{ id: string; message: string }[]>(
-            (acc, w) => { if (w.severity === "warn") acc.push(w); return acc; },
-            [],
-          );
+          const warnItems = results.topologyWarnings.reduce<
+            { id: string; message: string }[]
+          >((acc, w) => {
+            if (w.severity === "warn") acc.push(w);
+            return acc;
+          }, []);
           if (warnItems.length === 0) return null;
           return (
             <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
@@ -555,7 +561,8 @@ export function ResultsModal() {
                 <>
                   <XCircle size={12} className="text-red-500" />
                   Failed to save
-                  <button type="button"
+                  <button
+                    type="button"
                     onClick={() => {
                       saveAttempt.reset();
                       doSave();

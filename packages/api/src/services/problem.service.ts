@@ -182,6 +182,7 @@ export const problemService = {
         title: problem.title,
         difficulty: problem.difficulty,
         tags: problem.tags,
+        isActive: problem.isActive,
         displayOrder: problem.displayOrder,
         createdAt: problem.createdAt,
       })

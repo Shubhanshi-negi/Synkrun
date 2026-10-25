@@ -89,7 +89,7 @@ export function ShareModal({ roomId, isOwner, isPublic }: ShareModalProps) {
         toast.success("Invitation sent successfully");
         setInviteUsername("");
         setIsSuggestionsOpen(false);
-        queryClient.invalidateQueries(
+        void queryClient.invalidateQueries(
           trpc.room.byId.queryFilter({ id: roomId }),
         );
       },
@@ -103,7 +103,7 @@ export function ShareModal({ roomId, isOwner, isPublic }: ShareModalProps) {
     trpc.room.removeMember.mutationOptions({
       onSuccess: () => {
         toast.success("Member removed");
-        queryClient.invalidateQueries(
+        void queryClient.invalidateQueries(
           trpc.room.byId.queryFilter({ id: roomId }),
         );
       },
@@ -117,7 +117,7 @@ export function ShareModal({ roomId, isOwner, isPublic }: ShareModalProps) {
     trpc.room.updateMemberRole.mutationOptions({
       onSuccess: () => {
         toast.success("Role updated");
-        queryClient.invalidateQueries(
+        void queryClient.invalidateQueries(
           trpc.room.byId.queryFilter({ id: roomId }),
         );
       },
@@ -135,7 +135,7 @@ export function ShareModal({ roomId, isOwner, isPublic }: ShareModalProps) {
           accept: variables.accept,
         });
         toast.success(variables.accept ? "Request approved" : "Request denied");
-        queryClient.invalidateQueries(
+        void queryClient.invalidateQueries(
           trpc.room.byId.queryFilter({ id: roomId }),
         );
       },
@@ -158,7 +158,7 @@ export function ShareModal({ roomId, isOwner, isPublic }: ShareModalProps) {
         queryClient.setQueryData(queryKey, (prev) =>
           prev ? { ...prev, isPublic: data.isPublic } : prev,
         );
-        queryClient.invalidateQueries(
+        void queryClient.invalidateQueries(
           trpc.room.byId.queryFilter({ id: roomId }),
         );
       },
@@ -180,16 +180,21 @@ export function ShareModal({ roomId, isOwner, isPublic }: ShareModalProps) {
 
   const copyLink = () => {
     const url = window.location.href;
-    navigator.clipboard.writeText(url);
-    toast.success("Link copied to clipboard");
+    void navigator.clipboard
+      .writeText(url)
+      .then(() => toast.success("Link copied to clipboard"))
+      .catch((error: unknown) => {
+        console.error("Failed to copy ducklet link:", error);
+        toast.error("Failed to copy link");
+      });
   };
 
   const pendingRequests =
-    ducklet?.members.filter((m) => m.status === "requested") || [];
+    ducklet?.members.filter((m) => m.status === "requested") ?? [];
   const activeMembers =
     ducklet?.members.filter(
       (m) => m.status === "active" || m.status === "invited",
-    ) || [];
+    ) ?? [];
 
   const membersList = (
     <ScrollArea className="h-[200px] pr-4">
@@ -268,7 +273,7 @@ export function ShareModal({ roomId, isOwner, isPublic }: ShareModalProps) {
               <Avatar className="size-8">
                 <AvatarImage src={ducklet?.owner?.photoURL ?? undefined} />
                 <AvatarFallback>
-                  {ducklet?.owner?.username?.[0]?.toUpperCase()}
+                  {ducklet?.owner?.username[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div>
@@ -362,7 +367,7 @@ export function ShareModal({ roomId, isOwner, isPublic }: ShareModalProps) {
         <Button variant="outline" size="sm" className="gap-2">
           <UserPlus className="size-4" />
           Share
-          {pendingRequests.length > 0 && isOwner && (
+          {pendingRequests.length > 0 && (
             <Badge
               variant="destructive"
               className="flex size-5 items-center justify-center rounded-full p-0 text-[10px]"
@@ -439,7 +444,7 @@ export function ShareModal({ roomId, isOwner, isPublic }: ShareModalProps) {
               <TabsTrigger value="invite">Invite</TabsTrigger>
               <TabsTrigger value="members">
                 Members
-                {pendingRequests.length > 0 && isOwner && (
+                {pendingRequests.length > 0 && (
                   <Badge
                     variant="secondary"
                     className="ml-2 h-4 px-1 text-[10px]"

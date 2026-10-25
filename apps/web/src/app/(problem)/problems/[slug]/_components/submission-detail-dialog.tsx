@@ -268,7 +268,7 @@ export function SubmissionDetailDialog({
           <div className="max-h-64 overflow-auto rounded-lg border border-white/5 bg-[#1e1e1e]">
             <CodeEditor
               value={sub.code}
-              onChange={() => {}}
+              onChange={(value) => void value}
               language={sub.lang as Language}
               height="250px"
               readOnly

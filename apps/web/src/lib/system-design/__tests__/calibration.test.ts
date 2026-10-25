@@ -639,8 +639,8 @@ const cases: LevelCase[] = [
 ];
 
 for (const { level, optimal, naive, broken } of cases) {
-  describe(`${level.slug} (budget $${level.budget})`, () => {
-    it("optimal design earns 3★", () => {
+  void describe(`${level.slug} (budget $${level.budget})`, () => {
+    void it("optimal design earns 3★", () => {
       const s = score(level, optimal, RUNS);
       assert.equal(
         s.minStars,
@@ -652,7 +652,7 @@ for (const { level, optimal, naive, broken } of cases) {
       );
     });
 
-    it("naive design passes but caps at ≤2★", () => {
+    void it("naive design passes but caps at ≤2★", () => {
       const s = score(level, naive, RUNS);
       assert.ok(
         s.passed,
@@ -666,7 +666,7 @@ for (const { level, optimal, naive, broken } of cases) {
       );
     });
 
-    it("broken design fails the level", () => {
+    void it("broken design fails the level", () => {
       const s = score(level, broken, RUNS);
       assert.ok(
         !s.passed,

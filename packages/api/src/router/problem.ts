@@ -43,7 +43,7 @@ export const problemRouter = createTRPCRouter({
           limit: input?.limit ?? 20,
           offset: input?.offset ?? 0,
         },
-        ctx.session?.user?.id,
+        ctx.session?.user.id,
       ),
     ),
 
@@ -51,7 +51,7 @@ export const problemRouter = createTRPCRouter({
   bySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(({ ctx, input }) =>
-      problemService.getBySlug(ctx.db, input.slug, ctx.session?.user?.id),
+      problemService.getBySlug(ctx.db, input.slug, ctx.session?.user.id),
     ),
 
   /** Preview a problem by slug, drafts included (admin — sanitized). */

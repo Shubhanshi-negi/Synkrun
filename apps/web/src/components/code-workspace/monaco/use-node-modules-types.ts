@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
 import type { Monaco } from "@monaco-editor/react";
 import type { WebContainer } from "@webcontainer/api";
+import { useEffect } from "react";
 
 /**
  * Feeds the editor's TypeScript service the *real* type declarations from the
@@ -143,7 +143,8 @@ export function useNodeModulesTypes({
   useEffect(() => {
     if (!monaco || !container || !enabled) return;
 
-    let cancelled = false;
+    const cancellation = { current: false };
+    const isCancelled = (): boolean => cancellation.current;
     let timer: ReturnType<typeof setTimeout> | null = null;
     let lastSentinel: string | null = null;
     let syncing = false;
@@ -154,7 +155,7 @@ export function useNodeModulesTypes({
       syncing = true;
       try {
         const { libs, truncated } = await collectNodeModulesTypes(container);
-        if (cancelled) return;
+        if (isCancelled()) return;
         // setExtraLibs replaces the whole set, so a re-install cleanly swaps
         // stale declarations instead of layering duplicates. It only touches
         // our node_modules mirror — Monaco's built-in lib (DOM, ES) is separate.
@@ -171,7 +172,7 @@ export function useNodeModulesTypes({
     };
 
     const poll = async () => {
-      if (cancelled) return;
+      if (isCancelled()) return;
       try {
         const sentinel = await container.fs.readFile(INSTALL_SENTINEL, "utf-8");
         if (sentinel !== lastSentinel) {
@@ -181,13 +182,13 @@ export function useNodeModulesTypes({
       } catch {
         // node_modules isn't installed yet — keep waiting for the sentinel.
       }
-      if (!cancelled) timer = setTimeout(() => void poll(), POLL_MS);
+      if (!isCancelled()) timer = setTimeout(() => void poll(), POLL_MS);
     };
 
     void poll();
 
     return () => {
-      cancelled = true;
+      cancellation.current = true;
       if (timer) clearTimeout(timer);
     };
   }, [monaco, container, enabled]);

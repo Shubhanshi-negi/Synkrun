@@ -29,9 +29,7 @@ export const roomSnapshot = pgTable(
     }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (t) => [
-    index("ducklet_snapshot_room_created_idx").on(t.roomId, t.createdAt),
-  ],
+  (t) => [index("ducklet_snapshot_room_created_idx").on(t.roomId, t.createdAt)],
 );
 
 export const roomSnapshotRelations = relations(roomSnapshot, ({ one }) => ({

@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { SquareTerminal, Trash2, X } from "lucide-react";
 
-import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
 import type { PreviewConsoleEntry } from "~/lib/webcontainer/preview-console";
 import type { WebContainerRuntime } from "~/lib/webcontainer/use-runtime";
+import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 
 // Keep at most this many rows in the DOM; older entries scroll off the top.
 const MAX_ROWS = 1000;
@@ -76,8 +76,7 @@ export function ConsolePanel({
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
-    atBottomRef.current =
-      el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
   };
 
   const handleClear = () => {

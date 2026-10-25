@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
 import type { HocuspocusProvider } from "@hocuspocus/provider";
 import type * as Y from "yjs";
+import { useCallback, useEffect, useRef } from "react";
+import { useMutation } from "@tanstack/react-query";
 
 import { getFilesMap } from "@acme/ducklet-fs";
 
@@ -76,30 +76,27 @@ export function useRoomPreviewCapture({
 
   // Gating (enough changes / cooldown) is the caller's job; this just performs
   // a capture + upload when allowed (editable, leader, preview up).
-  const performCapture = useCallback(
-    async (): Promise<void> => {
-      if (capturingRef.current) return;
-      if (!enabled || !amLeader()) return;
-      if (!runtimeRef.current.previewUrl) return; // dev server not up yet
+  const performCapture = useCallback(async (): Promise<void> => {
+    if (capturingRef.current) return;
+    if (!enabled || !amLeader()) return;
+    if (!runtimeRef.current.previewUrl) return; // dev server not up yet
 
-      capturingRef.current = true;
-      try {
-        const dataUrl = await runtimeRef.current.capture(CAPTURE);
-        const base64 = dataUrl.split(",")[1];
-        if (!base64) throw new Error("empty capture");
-        await mutateRef.current({
-          roomId,
-          image: base64,
-          contentType: "image/jpeg",
-        });
-        lastCaptureAtRef.current = Date.now();
-        changesRef.current = 0;
-      } finally {
-        capturingRef.current = false;
-      }
-    },
-    [enabled, amLeader, roomId],
-  );
+    capturingRef.current = true;
+    try {
+      const dataUrl = await runtimeRef.current.capture(CAPTURE);
+      const base64 = dataUrl.split(",")[1];
+      if (!base64) throw new Error("empty capture");
+      await mutateRef.current({
+        roomId,
+        image: base64,
+        contentType: "image/jpeg",
+      });
+      lastCaptureAtRef.current = Date.now();
+      changesRef.current = 0;
+    } finally {
+      capturingRef.current = false;
+    }
+  }, [enabled, amLeader, roomId]);
 
   // First shot once the preview boots, so a thumbnail appears without any edits.
   const previewUrl = runtime.previewUrl;

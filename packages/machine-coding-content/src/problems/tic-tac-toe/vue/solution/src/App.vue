@@ -55,7 +55,12 @@ function reset() {
     <h1>Tic Tac Toe</h1>
     <p role="status">{{ status }}</p>
     <div
-      style="display: grid; grid-template-columns: repeat(3, 4rem); gap: 4px; margin-bottom: 1rem"
+      style="
+        display: grid;
+        grid-template-columns: repeat(3, 4rem);
+        gap: 4px;
+        margin-bottom: 1rem;
+      "
     >
       <button
         v-for="(cell, i) in board"

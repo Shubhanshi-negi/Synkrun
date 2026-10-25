@@ -1,14 +1,7 @@
 "use client";
 
 import type { HTMLMotionProps, SpringOptions } from "motion/react";
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Star } from "lucide-react";
 import {
   AnimatePresence,
@@ -22,7 +15,10 @@ import {
 import { cn } from "~/lib/utils";
 import { SlidingNumber } from "./sliding-number";
 
-interface FormatNumberResult { number: string[]; unit: string }
+interface FormatNumberResult {
+  number: string[];
+  unit: string;
+}
 
 function formatNumber(num: number, formatted: boolean): FormatNumberResult {
   if (formatted) {
@@ -62,9 +58,9 @@ function GitHubStarsButton({
   const springVal = useSpring(motionVal, transition);
   const motionNumberRef = useRef(0);
   const isCompletedRef = useRef(false);
-  const [, forceRender] = useReducer((x) => x + 1, 0);
   const [stars, setStars] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [motionNumber, setMotionNumber] = useState(0);
   const [displayParticles, setDisplayParticles] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -73,11 +69,20 @@ function GitHubStarsButton({
   // One-off external GitHub API fetch — no tRPC route exists for this
   useEffect(() => {
     fetch(`https://api.github.com/repos/${username}/${repo}`)
-      .then((response) => response.json())
-      .then((data) => {
-        if (data && typeof data.stargazers_count === "number") {
-          setStars(data.stargazers_count);
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`GitHub API request failed (${response.status})`);
         }
+        const data: unknown = await response.json();
+        if (
+          typeof data !== "object" ||
+          data === null ||
+          !("stargazers_count" in data) ||
+          typeof data.stargazers_count !== "number"
+        ) {
+          throw new Error("GitHub API returned an invalid repository response");
+        }
+        setStars(data.stargazers_count);
       })
       .catch(console.error)
       .finally(() => setIsLoading(false));
@@ -95,7 +100,7 @@ function GitHubStarsButton({
       const newValue = Math.round(latest);
       if (motionNumberRef.current !== newValue) {
         motionNumberRef.current = newValue;
-        forceRender();
+        setMotionNumber(newValue);
       }
       if (stars !== 0 && newValue >= stars && !isCompletedRef.current) {
         isCompletedRef.current = true;
@@ -111,8 +116,8 @@ function GitHubStarsButton({
     if (stars > 0) motionVal.set(stars);
   }, [motionVal, stars]);
 
-  const fillPercentage = Math.min(100, (motionNumberRef.current / stars) * 100);
-  const formattedResult = formatNumber(motionNumberRef.current, formatted);
+  const fillPercentage = Math.min(100, (motionNumber / stars) * 100);
+  const formattedResult = formatNumber(motionNumber, formatted);
   const ghostFormattedNumber = formatNumber(stars, formatted);
 
   const renderNumberSegments = (
@@ -214,7 +219,7 @@ function GitHubStarsButton({
                     animate={{ scale: [1, 1.5], opacity: [0.8, 0] }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                   />
-                  {[...Array(6)].map((_, i) => (
+                  {Array.from({ length: 6 }, (_, i) => (
                     <m.div
                       key={i}
                       className="absolute size-1 rounded-full bg-amber-500"

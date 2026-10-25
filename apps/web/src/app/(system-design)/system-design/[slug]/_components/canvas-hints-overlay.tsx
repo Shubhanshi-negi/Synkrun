@@ -16,7 +16,8 @@ export function CanvasHintsOverlay() {
   return (
     <Panel position="bottom-right" className="!m-3">
       <div className="bg-card/90 w-60 rounded-xl border shadow-lg backdrop-blur-sm">
-        <button type="button"
+        <button
+          type="button"
           onClick={() => setExpanded(!expanded)}
           className="hover:bg-muted/50 flex w-full items-center gap-2 rounded-xl px-3 py-2 transition-colors"
         >

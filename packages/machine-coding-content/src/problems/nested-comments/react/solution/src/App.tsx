@@ -22,11 +22,7 @@ const makeComment = (text: string): Comment => ({
   children: [],
 });
 
-function addReply(
-  nodes: Comment[],
-  parentId: string,
-  text: string,
-): Comment[] {
+function addReply(nodes: Comment[], parentId: string, text: string): Comment[] {
   return nodes.map((n) =>
     n.id === parentId
       ? { ...n, children: [...n.children, makeComment(text)] }

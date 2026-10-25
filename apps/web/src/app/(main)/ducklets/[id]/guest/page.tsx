@@ -50,7 +50,7 @@ export default function GuestDuckletPage({
 
   // Auth state
   const { data: session } = authClient.useSession();
-  const userId = session?.user?.id;
+  const userId = session?.user.id;
 
   // Fetch ducklet data
   const {
@@ -90,12 +90,11 @@ export default function GuestDuckletPage({
 
   // Build a local, non-collaborative Y.Doc from the fetched snapshot. The
   // read-only workspace renders + previews this; edits aren't synced anywhere.
+  const yjsData = ducklet?.yjsData;
   const localDoc = useMemo(() => {
-    if (!ducklet?.yjsData) return null;
+    if (!yjsData) return null;
     try {
-      const bytes = Uint8Array.from(atob(ducklet.yjsData), (c) =>
-        c.charCodeAt(0),
-      );
+      const bytes = Uint8Array.from(atob(yjsData), (c) => c.charCodeAt(0));
       const doc = new Y.Doc();
       Y.applyUpdate(doc, bytes);
       return doc;
@@ -103,7 +102,7 @@ export default function GuestDuckletPage({
       console.error("Failed to decode ducklet snapshot:", err);
       return null;
     }
-  }, [ducklet?.yjsData]);
+  }, [yjsData]);
 
   // Determine user status
   const isOwner = ducklet?.ownerId === userId;
@@ -119,7 +118,7 @@ export default function GuestDuckletPage({
   const requestAccessMutation = useMutation(
     trpc.room.requestAccess.mutationOptions({
       onSuccess: () => {
-        refetch();
+        void refetch();
       },
     }),
   );

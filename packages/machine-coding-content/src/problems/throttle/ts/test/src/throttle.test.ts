@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 
-import { throttle } from "./throttle";
 import { cases } from "./mc-test";
+import { throttle } from "./throttle";
 
 cases("throttle", [
   {

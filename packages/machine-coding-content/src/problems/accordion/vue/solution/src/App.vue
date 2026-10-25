@@ -26,7 +26,15 @@ function toggle(id: string) {
           type="button"
           :aria-expanded="Boolean(open[s.id])"
           @click="toggle(s.id)"
-          style="width: 100%; text-align: left; padding: 10px 4px; background: none; border: none; font: inherit; cursor: pointer"
+          style="
+            width: 100%;
+            text-align: left;
+            padding: 10px 4px;
+            background: none;
+            border: none;
+            font: inherit;
+            cursor: pointer;
+          "
         >
           {{ s.title }}
         </button>

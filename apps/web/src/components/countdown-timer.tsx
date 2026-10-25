@@ -99,11 +99,7 @@ export function CountdownTimer({
         size="sm"
         onClick={() => setExpanded(true)}
         title="Show timer controls"
-        className={cn(
-          "gap-1 font-mono tabular-nums",
-          color,
-          className,
-        )}
+        className={cn("gap-1 font-mono tabular-nums", color, className)}
       >
         <Clock className="size-3.5" />
         {label}

@@ -1,8 +1,8 @@
 "use client";
 
+import type { Application, SPEObject } from "@splinetool/runtime";
 import { Suspense, useEffect, useRef } from "react";
 import Spline from "@splinetool/react-spline";
-import type { Application } from "@splinetool/runtime";
 
 const LANGS = ["python", "javascript", "cpp", "java"] as const;
 type Language = (typeof LANGS)[number];
@@ -30,16 +30,24 @@ Hello, Coder!`,
 };
 
 interface SplineElements {
-  terminal: any;
-  dropdown: any;
-  selectedLangIcons: Record<Language, any>;
+  terminal: SPEObject | undefined;
+  dropdown: SPEObject | undefined;
+  selectedLangIcons: Record<Language, SPEObject | undefined>;
+}
+
+function isLanguage(value: string): value is Language {
+  return LANGS.some((language) => language === value);
 }
 
 const AnimatedTerminal = () => {
-  const splineRef = useRef<Application>(undefined);
-  const elementsRef = useRef<SplineElements>(undefined);
-  const typingIntervalRef = useRef<NodeJS.Timeout>(undefined);
-  const blinkingIntervalRef = useRef<NodeJS.Timeout>(undefined);
+  const splineRef = useRef<Application | undefined>(undefined);
+  const elementsRef = useRef<SplineElements | undefined>(undefined);
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | undefined>(
+    undefined,
+  );
+  const blinkingIntervalRef = useRef<
+    ReturnType<typeof setInterval> | undefined
+  >(undefined);
   const isDropdownOpen = useRef(false);
   const lastToggleAt = useRef(0);
   const targetRotation = useRef({ x: 0, y: 0 });
@@ -153,13 +161,12 @@ const AnimatedTerminal = () => {
     elementsRef.current = {
       terminal: app.findObjectByName("terminal"),
       dropdown: app.findObjectByName("drop-down"),
-      selectedLangIcons: LANGS.reduce(
-        (acc, lang) => ({
-          ...acc,
-          [lang]: app.findObjectByName(`selected-lang-icon-${lang}`),
-        }),
-        {} as Record<Language, any>,
-      ),
+      selectedLangIcons: {
+        python: app.findObjectByName("selected-lang-icon-python"),
+        javascript: app.findObjectByName("selected-lang-icon-javascript"),
+        cpp: app.findObjectByName("selected-lang-icon-cpp"),
+        java: app.findObjectByName("selected-lang-icon-java"),
+      },
     };
 
     if (elementsRef.current.dropdown) {
@@ -175,8 +182,12 @@ const AnimatedTerminal = () => {
     const terminal = elementsRef.current.terminal;
     if (terminal) {
       terminal.visible = true;
-      terminal.scale.set(1, 1, 1);
-      terminal.rotation.set(0, isMobile ? 0 : -0.4, 0);
+      terminal.scale.x = 1;
+      terminal.scale.y = 1;
+      terminal.scale.z = 1;
+      terminal.rotation.x = 0;
+      terminal.rotation.y = isMobile ? 0 : -0.4;
+      terminal.rotation.z = 0;
       if (isMobile) {
         terminal.position.x = 0;
         terminal.position.y = -400;
@@ -191,8 +202,8 @@ const AnimatedTerminal = () => {
     selectLanguage("python");
 
     app.addEventListener("mouseDown", (e) => {
-      if (LANGS.includes(e.target.name as Language)) {
-        selectLanguage(e.target.name as Language);
+      if (isLanguage(e.target.name)) {
+        selectLanguage(e.target.name);
         setDropdownVisible(false);
         isDropdownOpen.current = false;
         return;

@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
 import type { Monaco } from "@monaco-editor/react";
 import type {
   CancellationToken,
-  editor as MEditor,
   languages,
+  editor as MEditor,
   Position,
 } from "monaco-editor";
+import { useEffect } from "react";
 
 /**
  * AI ghost-text completion via Monaco's first-class inline-completions API.

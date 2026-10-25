@@ -9,7 +9,9 @@ const names = () =>
   screen
     .getAllByRole("row")
     .slice(1)
-    .map((row) => within(row).getAllByRole("cell")[0]?.textContent?.trim() ?? "");
+    .map(
+      (row) => within(row).getAllByRole("cell")[0]?.textContent?.trim() ?? "",
+    );
 const status = () => screen.getByRole("status").textContent?.trim() ?? "";
 const header = (name: string) => screen.getByRole("button", { name });
 const nextPage = () => screen.getByRole("button", { name: "Next" });

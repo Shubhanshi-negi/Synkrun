@@ -29,8 +29,8 @@ export function ClosingCta() {
             </span>
           </h2>
           <p className="mx-auto mt-6 max-w-md text-base text-neutral-400">
-            Join the playground where coders practice, battle, and build together
-            — in real time.
+            Join the playground where coders practice, battle, and build
+            together — in real time.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link href="/problems">

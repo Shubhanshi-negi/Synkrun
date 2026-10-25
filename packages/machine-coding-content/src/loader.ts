@@ -120,17 +120,19 @@ export function loadProblem(def: ProblemDef): MachineCodingProblem {
     def.baseDir ?? defaultBaseDir(def.category),
   );
 
-  const variants: MachineCodingVariant[] | undefined = def.variants?.map((v) => {
-    const files = readVariant(problemDir, v.dir ?? v.id);
-    return {
-      id: v.id,
-      label: v.label,
-      templateId: v.templateId,
-      starterFiles: files.starter,
-      solutionFiles: files.solution,
-      testFiles: files.test,
-    };
-  });
+  const variants: MachineCodingVariant[] | undefined = def.variants?.map(
+    (v) => {
+      const files = readVariant(problemDir, v.dir ?? v.id);
+      return {
+        id: v.id,
+        label: v.label,
+        templateId: v.templateId,
+        starterFiles: files.starter,
+        solutionFiles: files.solution,
+        testFiles: files.test,
+      };
+    },
+  );
 
   return {
     slug: def.slug,

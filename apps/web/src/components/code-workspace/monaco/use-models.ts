@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import type { Monaco } from "@monaco-editor/react";
 import type { editor as MEditor } from "monaco-editor";
 import type * as Y from "yjs";
+import { useEffect, useRef, useState } from "react";
 
 import { getFilesMap } from "@acme/ducklet-fs";
 

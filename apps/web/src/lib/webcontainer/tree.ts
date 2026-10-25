@@ -56,7 +56,10 @@ export function toFileSystemTree(
 
   for (const [path, contents] of Object.entries(files)) {
     const segments = path.split("/");
-    const name = segments.pop()!;
+    const name = segments.pop();
+    if (!name) {
+      throw new Error("Cannot create a filesystem entry for an empty path");
+    }
     const dirNode = ensureDir(segments);
     dirNode[name] = { file: { contents } };
   }

@@ -80,7 +80,7 @@ export const systemDesignRouter = createTRPCRouter({
 
     const best: Record<string, (typeof attempts)[0]> = {};
     for (const a of attempts) {
-      if (!best[a.levelSlug]) best[a.levelSlug] = a;
+      best[a.levelSlug] ??= a;
     }
     return best;
   }),
@@ -174,8 +174,7 @@ export const systemDesignRouter = createTRPCRouter({
         return { sampleSize: 0, cost: null, latency: null, uptime: null };
       }
 
-      const pct = (beats: number) =>
-        Math.round((beats / total) * 1000) / 10;
+      const pct = (beats: number) => Math.round((beats / total) * 1000) / 10;
 
       // Cost-distribution histogram (cents → dollars), bucketed in SQL so we
       // never ship every row to the client.
@@ -217,8 +216,14 @@ export const systemDesignRouter = createTRPCRouter({
       return {
         sampleSize: total,
         cost: { percentile: pct(agg.costBeats), value: input.totalCost },
-        latency: { percentile: pct(agg.latencyBeats), value: input.avgLatencyMs },
-        uptime: { percentile: pct(agg.uptimeBeats), value: input.uptimePercent },
+        latency: {
+          percentile: pct(agg.latencyBeats),
+          value: input.avgLatencyMs,
+        },
+        uptime: {
+          percentile: pct(agg.uptimeBeats),
+          value: input.uptimePercent,
+        },
         histogram,
       };
     }),

@@ -1,9 +1,8 @@
 "use client";
 
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, Ref } from "react";
 import { useCallback, useImperativeHandle, useRef } from "react";
-import type { Ref } from "react";
-import { LazyMotion, domAnimation, m, useAnimation } from "motion/react";
+import { domAnimation, LazyMotion, m, useAnimation } from "motion/react";
 
 import { cn } from "~/lib/utils";
 
@@ -42,7 +41,7 @@ function PlusIcon({
       if (isControlledRef.current) {
         onMouseEnter?.(e);
       } else {
-        controls.start("animate");
+        void controls.start("animate");
       }
     },
     [controls, onMouseEnter],
@@ -53,7 +52,7 @@ function PlusIcon({
       if (isControlledRef.current) {
         onMouseLeave?.(e);
       } else {
-        controls.start("normal");
+        void controls.start("normal");
       }
     },
     [controls, onMouseLeave],

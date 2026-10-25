@@ -1,8 +1,8 @@
 "use client";
 
+import type { PresenceUser } from "~/lib/webcontainer/use-file-presence";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
-import type { PresenceUser } from "~/lib/webcontainer/use-file-presence";
 
 /** A compact, overlapping stack of collaborator avatars for a file row/tab. */
 export function PresenceAvatars({

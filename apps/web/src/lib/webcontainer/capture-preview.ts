@@ -135,9 +135,13 @@ export function capturePreview(
 
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== origin) return;
-      const data = event.data as
-        | { type?: string; id?: string; ok?: boolean; dataUrl?: string; error?: string }
-        | null;
+      const data = event.data as {
+        type?: string;
+        id?: string;
+        ok?: boolean;
+        dataUrl?: string;
+        error?: string;
+      } | null;
       if (!data) return;
       if (data.type !== RESULT || data.id !== id) return;
       if (data.ok && typeof data.dataUrl === "string") {

@@ -26,7 +26,7 @@ function totalCost(nodes: Node<BlockNodeData>[]): number {
   for (const n of nodes) {
     const data = n.data;
     if (data.isStartBlock) continue;
-    cost += data.definition.costPerMonth * (data.replicas ?? 1);
+    cost += data.definition.costPerMonth * data.replicas;
   }
   return cost;
 }
@@ -130,11 +130,12 @@ export function generateSuggestions(
   const triedCount = Math.min(candidates.length, 5);
 
   for (let i = 0; i < triedCount; i++) {
-    const cand = candidates[i]!;
+    const cand = candidates[i];
+    if (!cand) continue;
     const node = nodesById.get(cand.nodeId);
     if (!node) continue;
     const data = node.data;
-    const currentReplicas = data.replicas ?? 1;
+    const currentReplicas = data.replicas;
     const mutated = cloneNodesWithReplicas(
       nodes,
       cand.nodeId,
@@ -172,7 +173,7 @@ export function generateSuggestions(
       const data = n.data;
       if (data.isStartBlock) continue;
       if ((data.definition.scaling ?? "counter") !== "counter") continue;
-      const replicas = data.replicas ?? 1;
+      const replicas = data.replicas;
       if (replicas <= 1) continue;
       const peak = peakLoad.get(n.id) ?? 0;
       if (peak > 50) continue; // headroom matters when traffic spikes

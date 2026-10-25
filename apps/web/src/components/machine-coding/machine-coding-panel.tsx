@@ -4,18 +4,21 @@ import { useState } from "react";
 import Link from "next/link";
 import { Building2, Clock, Flame, Tag } from "lucide-react";
 
+import type { MachineCodingContext } from "./types";
 import { DIFFICULTY_TEXT_COLORS } from "~/components/difficulty-badge";
 import { Markdown } from "~/components/markdown";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { companyIconSrc } from "~/lib/machine-coding/company-icons";
-import { CATEGORY_LABELS, STATUS_DOT, STATUS_LABELS } from "~/lib/machine-coding/labels";
+import {
+  CATEGORY_LABELS,
+  STATUS_DOT,
+  STATUS_LABELS,
+} from "~/lib/machine-coding/labels";
 import { cn } from "~/lib/utils";
-
 import { CategoryIcons } from "./category-icons";
 import { SolutionTab } from "./solution-tab";
-import type { MachineCodingContext } from "./types";
 import { VariantIcons } from "./variant-icons";
 
 /**
@@ -36,7 +39,10 @@ export function MachineCodingPanel({
     context;
 
   const hasFootnotes =
-    roomId != null || attempt != null || tags.length > 0 || companies.length > 0;
+    roomId != null ||
+    attempt != null ||
+    tags.length > 0 ||
+    companies.length > 0;
 
   return (
     <Tabs value={tab} onValueChange={setTab} className="flex h-full flex-col">

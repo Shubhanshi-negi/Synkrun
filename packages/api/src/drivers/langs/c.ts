@@ -11,7 +11,7 @@ function cType(t: string): string {
     "integer[]": "int*",
     "string[]": "char**",
   };
-  return map[t] || "void*";
+  return map[t] ?? "void*";
 }
 
 function cStringLiteral(s: string): string {

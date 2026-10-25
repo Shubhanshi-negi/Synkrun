@@ -7,5 +7,9 @@ copy.nested.b.push(4);
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML =
   "<h1>Deep Clone</h1>" +
-  "<p>original: <code>" + JSON.stringify(original) + "</code></p>" +
-  "<p>copy: <code>" + JSON.stringify(copy) + "</code></p>";
+  "<p>original: <code>" +
+  JSON.stringify(original) +
+  "</code></p>" +
+  "<p>copy: <code>" +
+  JSON.stringify(copy) +
+  "</code></p>";

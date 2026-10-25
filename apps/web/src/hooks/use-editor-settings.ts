@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
+import { z } from "zod";
 
 export interface EditorSettings {
   fontSize: number;
@@ -34,6 +35,20 @@ const defaults: EditorSettings = {
   aiCompletion: true,
   tsIntelligence: true,
 };
+const editorSettingsSchema = z
+  .object({
+    fontSize: z.number(),
+    fontFamily: z.string(),
+    fontLigatures: z.boolean(),
+    tabSize: z.number(),
+    relativeLineNumbers: z.boolean(),
+    keymap: z.enum(["default", "vim"]),
+    runShortcut: z.boolean(),
+    submitShortcut: z.boolean(),
+    aiCompletion: z.boolean(),
+    tsIntelligence: z.boolean(),
+  })
+  .partial();
 
 let listeners: (() => void)[] = [];
 let cached: EditorSettings = defaults;
@@ -42,8 +57,16 @@ function read(): EditorSettings {
   if (typeof window === "undefined") return defaults;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
-  } catch {
+    if (!raw) return defaults;
+    const parsed: unknown = JSON.parse(raw);
+    const settings = editorSettingsSchema.safeParse(parsed);
+    if (!settings.success) {
+      console.error("Stored editor settings are invalid:", settings.error);
+      return defaults;
+    }
+    return { ...defaults, ...settings.data };
+  } catch (error) {
+    console.error("Failed to read editor settings:", error);
     return defaults;
   }
 }

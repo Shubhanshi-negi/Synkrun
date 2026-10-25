@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, X } from "lucide-react";
@@ -16,6 +16,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
+import { useDebounce } from "~/hooks/use-debounce";
 import { cn } from "~/lib/utils";
 import { useTRPC } from "~/trpc/react";
 
@@ -57,9 +58,6 @@ export function EditProfileDialog({
   const [prevProfileUsername, setPrevProfileUsername] = useState(
     profile.username,
   );
-  const [debouncedUsername, setDebouncedUsername] = useState("");
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
   // Sync username when the profile prop changes (prev-prop pattern — no effect needed)
   if (profile.username !== prevProfileUsername) {
     setPrevProfileUsername(profile.username);
@@ -68,19 +66,10 @@ export function EditProfileDialog({
 
   const usernameChanged = username !== profile.username;
   const usernameValid = /^[a-z0-9_]{3,30}$/.test(username);
-
-  // Debounce username for availability check — two setDebouncedUsername paths (clear vs. set) are intentional
-  useEffect(() => {
-    if (!usernameChanged || !usernameValid) {
-      setDebouncedUsername("");
-      return;
-    }
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setDebouncedUsername(username);
-    }, 500);
-    return () => clearTimeout(debounceRef.current);
-  }, [username, usernameChanged, usernameValid]);
+  const debouncedUsername = useDebounce(
+    usernameChanged && usernameValid ? username : "",
+    500,
+  );
 
   const { data: availability, isFetching: isChecking } = useQuery(
     trpc.profile.checkUsername.queryOptions(
@@ -95,7 +84,7 @@ export function EditProfileDialog({
   const profileMutation = useMutation(
     trpc.profile.updateProfile.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [["profile"]] });
+        void queryClient.invalidateQueries({ queryKey: [["profile"]] });
       },
       onError: (err) => {
         toast.error(err.message || "Failed to update profile");
@@ -106,7 +95,7 @@ export function EditProfileDialog({
   const usernameMutation = useMutation(
     trpc.profile.updateUsername.mutationOptions({
       onSuccess: (data) => {
-        queryClient.invalidateQueries({ queryKey: [["profile"]] });
+        void queryClient.invalidateQueries({ queryKey: [["profile"]] });
         router.replace(`/u/${data.username}`);
       },
       onError: (err) => {
@@ -115,7 +104,7 @@ export function EditProfileDialog({
     }),
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (usernameChanged) {

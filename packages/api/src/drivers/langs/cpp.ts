@@ -11,7 +11,7 @@ function cppType(t: string): string {
     "integer[]": "vector<int>",
     "string[]": "vector<string>",
   };
-  return map[t] || "auto";
+  return map[t] ?? "auto";
 }
 
 function cppParseExpr(type: string, argExpr: string): string {

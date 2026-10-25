@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { authClient } from "~/auth/client";
+import { useSignIn } from "~/components/sign-in-dialog";
 import { AnimatedThemeToggler } from "~/components/ui/animated-theme-toggler";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -35,7 +36,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { useSignIn } from "~/components/sign-in-dialog";
 import { getAvatarUrl } from "~/lib/avatar";
 import { cn } from "~/lib/utils";
 import { useTRPC } from "~/trpc/react";
@@ -71,7 +71,6 @@ export function ProblemHeader({
   useEffect(() => {
     if (isBusy) {
       startRef.current = Date.now();
-      setElapsed(0);
       const id = setInterval(
         () => setElapsed(Date.now() - startRef.current),
         100,
@@ -256,13 +255,14 @@ export function ProblemHeader({
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button"
+              <button
+                type="button"
                 aria-label="Account menu"
                 className="flex size-7 items-center justify-center rounded-full"
               >
                 <Image
                   src={getAvatarUrl(user.username, 28)}
-                  alt={user.name ?? "User"}
+                  alt={user.name}
                   width={28}
                   height={28}
                   unoptimized
@@ -271,7 +271,7 @@ export function ProblemHeader({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{user.name ?? "User"}</DropdownMenuLabel>
+              <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {user.username && (
                 <DropdownMenuItem asChild>

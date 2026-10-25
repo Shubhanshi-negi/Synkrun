@@ -24,13 +24,20 @@ function go(delta: number) {
       style="width: 100%; height: 180px; object-fit: cover; background: #eee"
     />
     <div
-      style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px"
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+      "
     >
       <button type="button" aria-label="Previous slide" @click="go(-1)">
         ‹ Prev
       </button>
       <span role="status">Slide {{ index + 1 }} of {{ count }}</span>
-      <button type="button" aria-label="Next slide" @click="go(1)">Next ›</button>
+      <button type="button" aria-label="Next slide" @click="go(1)">
+        Next ›
+      </button>
     </div>
   </main>
 </template>

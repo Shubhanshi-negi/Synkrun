@@ -37,14 +37,14 @@ function writeLastProvider(provider: Provider) {
   }
 }
 
-type OpenOptions = {
+interface OpenOptions {
   source: string;
   callbackURL?: string;
-};
+}
 
-type SignInContextValue = {
+interface SignInContextValue {
   openSignIn: (opts: OpenOptions) => void;
-};
+}
 
 const SignInContext = createContext<SignInContextValue | null>(null);
 

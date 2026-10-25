@@ -299,6 +299,14 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function createProgramOrNull(gl: WebGLRenderingContext): WebGLProgram | null {
+  return gl.createProgram();
+}
+
+function createBufferOrNull(gl: WebGLRenderingContext): WebGLBuffer | null {
+  return gl.createBuffer();
+}
+
 function createShader(gl: WebGLRenderingContext, type: number, source: string) {
   const shader = gl.createShader(type);
 
@@ -329,7 +337,7 @@ function createProgram(gl: WebGLRenderingContext) {
     return null;
   }
 
-  const program = gl.createProgram();
+  const program = createProgramOrNull(gl);
 
   if (!program) {
     gl.deleteShader(vertexShader);
@@ -573,7 +581,7 @@ export function RetroGrid({
         return false;
       }
 
-      const nextPositionBuffer = nextGl.createBuffer();
+      const nextPositionBuffer = createBufferOrNull(nextGl);
 
       if (!nextPositionBuffer) {
         nextGl.deleteProgram(program);
@@ -727,9 +735,7 @@ export function RetroGrid({
         return;
       }
 
-      if (animationFrameId === null) {
-        animationFrameId = requestAnimationFrame(frame);
-      }
+      animationFrameId ??= requestAnimationFrame(frame);
     };
 
     syncSceneRef.current = syncScene;

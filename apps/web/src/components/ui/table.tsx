@@ -1,12 +1,8 @@
-import * as React from "react";
+import type * as React from "react";
 
 import { cn } from "~/lib/utils";
 
-function Table({
-  className,
-  ref,
-  ...props
-}: React.ComponentProps<"table">) {
+function Table({ className, ref, ...props }: React.ComponentProps<"table">) {
   return (
     <div className="relative w-full overflow-auto">
       <table
@@ -63,11 +59,7 @@ function TableFooter({
 }
 TableFooter.displayName = "TableFooter";
 
-function TableRow({
-  className,
-  ref,
-  ...props
-}: React.ComponentProps<"tr">) {
+function TableRow({ className, ref, ...props }: React.ComponentProps<"tr">) {
   return (
     <tr
       ref={ref}
@@ -81,11 +73,7 @@ function TableRow({
 }
 TableRow.displayName = "TableRow";
 
-function TableHead({
-  className,
-  ref,
-  ...props
-}: React.ComponentProps<"th">) {
+function TableHead({ className, ref, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       ref={ref}
@@ -99,11 +87,7 @@ function TableHead({
 }
 TableHead.displayName = "TableHead";
 
-function TableCell({
-  className,
-  ref,
-  ...props
-}: React.ComponentProps<"td">) {
+function TableCell({ className, ref, ...props }: React.ComponentProps<"td">) {
   return (
     <td
       ref={ref}

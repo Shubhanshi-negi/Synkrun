@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { Panel } from "@xyflow/react";
 import { ArrowLeft, MousePointerClick } from "lucide-react";
 
@@ -29,7 +29,7 @@ export function CanvasEmptyState() {
   // Read persisted preference on mount (client-only, localStorage) to avoid SSR mismatch.
   // Must stay in effect — localStorage is a browser-only API, unsafe during SSR render.
   useEffect(() => {
-    setHidden(isDismissed());
+    startTransition(() => setHidden(isDismissed()));
   }, []);
 
   if (hidden) return null;
@@ -61,7 +61,8 @@ export function CanvasEmptyState() {
           </p>
         </div>
 
-        <button type="button"
+        <button
+          type="button"
           onClick={() => {
             markDismissed();
             setHidden(true);

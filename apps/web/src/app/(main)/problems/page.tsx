@@ -57,7 +57,8 @@ export default function ProblemsPage() {
 
       {/* Tabs */}
       <div className="mb-6 flex items-center gap-6 border-b">
-        <button type="button"
+        <button
+          type="button"
           onClick={() => setTab("all")}
           className={cn(
             "-mb-px border-b-2 pb-2.5 text-sm font-medium transition-colors",
@@ -69,7 +70,8 @@ export default function ProblemsPage() {
           All Problems
         </button>
         {session && (
-          <button type="button"
+          <button
+            type="button"
             onClick={() => setTab("bookmarks")}
             className={cn(
               "-mb-px flex items-center gap-1.5 border-b-2 pb-2.5 text-sm font-medium transition-colors",
@@ -153,7 +155,7 @@ export default function ProblemsPage() {
                         {index + 1}.
                       </span>
                       {problem.title}
-                      {problem.tags && problem.tags.length > 0 && (
+                      {problem.tags.length > 0 && (
                         <div className="ml-3 inline-flex gap-1">
                           {problem.tags.slice(0, 3).map((tag) => (
                             <span
@@ -225,7 +227,7 @@ export default function ProblemsPage() {
                     className="font-medium hover:underline"
                   >
                     {bm.problemTitle}
-                    {bm.problemTags && bm.problemTags.length > 0 && (
+                    {bm.problemTags.length > 0 && (
                       <span className="ml-3 inline-flex gap-1">
                         {bm.problemTags.slice(0, 3).map((tag) => (
                           <span

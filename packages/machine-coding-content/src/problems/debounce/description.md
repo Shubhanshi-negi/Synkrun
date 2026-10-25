@@ -6,7 +6,9 @@ returned function was invoked. Rapid calls reset the timer.
 
 ```ts
 const log = debounce(() => console.log("saved"), 300);
-log(); log(); log(); // "saved" prints once, 300ms after the last call
+log();
+log();
+log(); // "saved" prints once, 300ms after the last call
 ```
 
 ## Requirements

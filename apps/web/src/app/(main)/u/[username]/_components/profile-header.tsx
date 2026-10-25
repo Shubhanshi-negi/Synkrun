@@ -38,11 +38,11 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ profile }: ProfileHeaderProps) {
   const { data: session } = authClient.useSession();
-  const isOwnProfile = session?.user?.id === profile.userId;
+  const isOwnProfile = session?.user.id === profile.userId;
   const [editOpen, setEditOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
 
-  const displayName = profile.fullname || profile.name;
+  const displayName = profile.fullname ?? profile.name;
   const avatarUrl = getAvatarUrl(profile.avatarSeed ?? profile.username);
   const joinDate = profile.createdAt
     ? new Date(profile.createdAt).toLocaleDateString("en-US", {
@@ -60,7 +60,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
       label: "LinkedIn",
     },
     { url: profile.websiteUrl, icon: Globe, label: "Website" },
-  ].filter((l) => l.url);
+  ].filter((link): link is typeof link & { url: string } => link.url !== null);
 
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
@@ -74,7 +74,8 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           className="bg-muted size-24 rounded-2xl shadow-lg"
         />
         {isOwnProfile && (
-          <button type="button"
+          <button
+            type="button"
             onClick={() => setAvatarOpen(true)}
             className="bg-background border-border hover:bg-muted absolute -right-1 -bottom-1 rounded-full border p-1.5 shadow-sm transition-colors"
           >
@@ -117,7 +118,7 @@ export function ProfileHeader({ profile }: ProfileHeaderProps) {
           {socialLinks.map((link) => (
             <a
               key={link.label}
-              href={link.url!}
+              href={link.url}
               target="_blank"
               rel="noopener noreferrer"
               className={cn(

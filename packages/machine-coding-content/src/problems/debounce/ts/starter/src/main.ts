@@ -14,4 +14,6 @@ let calls = 0;
 const onType = debounce(() => {
   out.textContent = `fired ${++calls}×`;
 }, 400);
-document.querySelector<HTMLInputElement>("#box")!.addEventListener("input", onType);
+document
+  .querySelector<HTMLInputElement>("#box")!
+  .addEventListener("input", onType);

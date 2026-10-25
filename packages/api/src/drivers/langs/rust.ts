@@ -11,7 +11,7 @@ function rustType(t: string): string {
     "integer[]": "Vec<i32>",
     "string[]": "Vec<String>",
   };
-  return map[t] || "i32";
+  return map[t] ?? "i32";
 }
 
 function rustParseExpr(type: string, argExpr: string): string {
@@ -40,7 +40,7 @@ function rustSerialize(varName: string, type: string): string {
     case "float":
       return `format!("{}", ${varName})`;
     case "string":
-      return `format!("\\\"{}\\\"", ${varName})`;
+      return `format!("{:?}", ${varName})`;
     case "boolean":
       return `format!("{}", ${varName})`;
     case "integer[]":
@@ -126,12 +126,32 @@ fn serialize_int_array(arr: &[i32]) -> String {
 }
 
 fn serialize_string_array(arr: &[String]) -> String {
-    let parts: Vec<String> = arr.iter().map(|x| format!("\\\"{}\\\"", x)).collect();
+    let parts: Vec<String> = arr.iter().map(|x| format!("{:?}", x)).collect();
     format!("[{}]", parts.join(","))
 }
 
 fn escape_json(s: &str) -> String {
-    s.replace('\\\\', "\\\\\\\\").replace('"', "\\\\\\\"")
+    let mut escaped = String::new();
+    for character in s.chars() {
+        match character {
+            '\\\\' => {
+                escaped.push('\\\\');
+                escaped.push('\\\\');
+            }
+            '"' => {
+                escaped.push('\\\\');
+                escaped.push('"');
+            }
+            '\\n' => escaped.push_str("\\\\n"),
+            '\\r' => escaped.push_str("\\\\r"),
+            '\\t' => escaped.push_str("\\\\t"),
+            character if character.is_control() => {
+                escaped.push_str(&format!("\\\\u{:04x}", character as u32));
+            }
+            character => escaped.push(character),
+        }
+    }
+    escaped
 }
 
 fn main() {
@@ -159,11 +179,11 @@ ${parseStatements}
             Ok(actual_str) => {
                 let expected_str = all_expected[t].trim();
                 let passed = actual_str == expected_str;
-                json_out.push_str(&format!("{{\\"index\\":{},\\"passed\\":{}", all_indices[t], passed));
+                json_out.push_str(&format!(r#"{{"index":{},"passed":{}"#, all_indices[t], passed));
                 if all_is_public[t] {
-                    json_out.push_str(&format!(",\\"actual\\":\\"{}\\\"", escape_json(&actual_str)));
+                    json_out.push_str(&format!(r#","actual":"{}""#, escape_json(&actual_str)));
                 }
-                json_out.push_str(&format!(",\\"isPublic\\":{}}}", all_is_public[t]));
+                json_out.push_str(&format!(r#","isPublic":{}}}"#, all_is_public[t]));
             }
             Err(e) => {
                 let msg = if let Some(s) = e.downcast_ref::<&str>() {
@@ -174,7 +194,7 @@ ${parseStatements}
                     "Runtime Error".to_string()
                 };
                 json_out.push_str(&format!(
-                    "{{\\"index\\":{},\\"passed\\":false,\\"error\\":\\"{}\\",\\"isPublic\\":{}}}",
+                    r#"{{"index":{},"passed":false,"error":"{}","isPublic":{}}}"#,
                     all_indices[t], escape_json(&msg), all_is_public[t]
                 ));
             }

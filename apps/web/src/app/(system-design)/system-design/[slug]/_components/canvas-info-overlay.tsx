@@ -5,18 +5,16 @@ import dynamic from "next/dynamic";
 import { Panel } from "@xyflow/react";
 import { AlertTriangle, Check, Circle, Info } from "lucide-react";
 
-const CanvasTrafficMini = dynamic(
-  () =>
-    import("./canvas-traffic-mini").then((m) => m.CanvasTrafficMini),
-  { ssr: false },
-);
-
-import type { BlockNodeData } from "~/lib/system-design/types";
 import { getReachableTypes } from "~/lib/system-design/connection-validator";
 import { computeMissingLayerPenalties } from "~/lib/system-design/simulation-engine";
 import { useSystemDesignStore } from "~/lib/system-design/store";
 import { computeTopologyWarnings } from "~/lib/system-design/topology-warnings";
 import { cn } from "~/lib/utils";
+
+const CanvasTrafficMini = dynamic(
+  () => import("./canvas-traffic-mini").then((m) => m.CanvasTrafficMini),
+  { ssr: false },
+);
 
 export function CanvasInfoOverlay() {
   const level = useSystemDesignStore((s) => s.level);
@@ -36,7 +34,7 @@ export function CanvasInfoOverlay() {
 
   const budgetUsed = nodes.reduce((sum, n) => {
     const d = n.data;
-    return sum + d.definition.costPerMonth * (d.replicas ?? 1);
+    return sum + d.definition.costPerMonth * d.replicas;
   }, 0);
   const budgetPercent = (budgetUsed / level.budget) * 100;
   const requiredBlocks = level.requiredBlockTypes ?? [];

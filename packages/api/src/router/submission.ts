@@ -3,7 +3,7 @@ import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import type { db } from "@acme/db";
-import type { FunctionSignature, TestCase } from "@acme/db/schema";
+import type { TestCase, TestResult } from "@acme/db/schema";
 import { problem, submission, userProfile } from "@acme/db/schema";
 
 import { env, getJudgeApiUrl } from "../../env";
@@ -93,32 +93,48 @@ function parseTestResults(
   stdout: string,
   stderr: string,
   testCases: TestCase[],
-) {
+): TestResult[] {
   try {
     if (!stdout || stdout.trim() === "") {
       throw new Error("Empty stdout");
     }
-    const results = JSON.parse(stdout);
-    if (!Array.isArray(results)) {
+    const results: unknown = JSON.parse(stdout);
+    if (
+      !Array.isArray(results) ||
+      !results.every(
+        (result): result is Record<string, unknown> =>
+          typeof result === "object" &&
+          result !== null &&
+          !Array.isArray(result),
+      )
+    ) {
       throw new Error("Invalid results format");
     }
-    return results.map((r: any, i: number) => ({
-      passed: r.passed || false,
-      runtime: r.runtime as number | undefined,
-      memory: r.memory as number | undefined,
+    return results.map((result, i) => ({
+      passed: result.passed === true,
+      runtime: typeof result.runtime === "number" ? result.runtime : undefined,
+      memory: typeof result.memory === "number" ? result.memory : undefined,
       input:
-        r.isPublic && testCases[i]
-          ? testCases[i].args?.join(", ") || testCases[i].input
+        result.isPublic === true && testCases[i]
+          ? (testCases[i].args?.join(", ") ?? testCases[i].input)
           : undefined,
       expected:
-        r.isPublic && testCases[i]
-          ? testCases[i].expected || testCases[i].output
+        result.isPublic === true && testCases[i]
+          ? (testCases[i].expected ?? testCases[i].output)
           : undefined,
-      actual: r.isPublic ? (r.actual as string | undefined) : undefined,
-      error: r.error as string | undefined,
+      actual:
+        result.isPublic === true && typeof result.actual === "string"
+          ? result.actual
+          : undefined,
+      error: typeof result.error === "string" ? result.error : undefined,
     }));
-  } catch (e: any) {
-    const errorMessage = stderr || e.message || "Runtime Error";
+  } catch (error: unknown) {
+    const errorMessage =
+      stderr.length > 0
+        ? stderr
+        : error instanceof Error && error.message.length > 0
+          ? error.message
+          : "Runtime Error";
     return testCases.map(() => ({
       passed: false,
       error: errorMessage,
@@ -132,12 +148,12 @@ function parseTestResults(
  * job (`{ jobId }`); stdin problems fan out to one job per test case and
  * carry the expected output so polling can grade each independently.
  */
-interface PendingJob {
+interface PendingJob extends TestResult {
   jobId: string;
-  // Present only for the stdin (one-job-per-test) path.
-  expected?: string;
-  input?: string;
-  isPublic?: boolean;
+}
+
+function isPendingJob(result: TestResult): result is PendingJob {
+  return typeof result.jobId === "string";
 }
 
 /**
@@ -158,6 +174,13 @@ async function dispatchSubmission(
     hidePrivate: boolean;
   },
 ): Promise<{ id: number; jobId: string }> {
+  if (opts.testCases.length === 0) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Cannot submit a problem without test cases",
+    });
+  }
+
   const signature = prob.functionSignature;
   const limits = { timeLimit: prob.timeLimit, memoryLimit: prob.memoryLimit };
 
@@ -172,7 +195,10 @@ async function dispatchSubmission(
       opts.hidePrivate,
     );
     pendingJobs = [
-      { jobId: await submitToJudge(driverCode, opts.lang, limits) },
+      {
+        jobId: await submitToJudge(driverCode, opts.lang, limits),
+        passed: false,
+      },
     ];
   } else {
     // stdin problem: one job per test case, raw user code, input on stdin.
@@ -187,8 +213,17 @@ async function dispatchSubmission(
         expected: tc.output ?? "",
         input: tc.isPublic || !opts.hidePrivate ? (tc.input ?? "") : undefined,
         isPublic: opts.hidePrivate ? tc.isPublic : true,
+        passed: false,
       })),
     );
+  }
+
+  const firstJob = pendingJobs[0];
+  if (!firstJob) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "No judge job was created",
+    });
   }
 
   const [newSubmission] = await database
@@ -201,7 +236,7 @@ async function dispatchSubmission(
       kind: opts.kind,
       status: "running",
       testsTotal: opts.testCases.length,
-      results: pendingJobs as any,
+      results: pendingJobs,
     })
     .returning();
 
@@ -212,7 +247,7 @@ async function dispatchSubmission(
     });
   }
 
-  return { id: newSubmission.id, jobId: pendingJobs[0]!.jobId };
+  return { id: newSubmission.id, jobId: firstJob.jobId };
 }
 
 /** Normalise program output for comparison: trim trailing space per line. */
@@ -227,10 +262,8 @@ function normalizeOutput(s: string): string {
 
 /** Roll the daily solve streak forward for an accepted real submission. */
 async function applyStreak(database: typeof db, userId: string) {
-  const today = new Date().toISOString().split("T")[0]!;
-  const yesterday = new Date(Date.now() - 86400000)
-    .toISOString()
-    .split("T")[0]!;
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
   const [profile] = await database
     .select()
@@ -241,12 +274,9 @@ async function applyStreak(database: typeof db, userId: string) {
   if (!profile) return;
 
   let newStreak = profile.currentStreak;
-  if (profile.lastSolveDate === today) {
-    // Already solved today, no-op
-  } else if (profile.lastSolveDate === yesterday) {
-    newStreak = profile.currentStreak + 1;
-  } else {
-    newStreak = 1;
+  if (profile.lastSolveDate !== today) {
+    newStreak =
+      profile.lastSolveDate === yesterday ? profile.currentStreak + 1 : 1;
   }
 
   await database
@@ -312,17 +342,18 @@ export const submissionRouter = createTRPCRouter({
 
       if (!prob) throw new TRPCError({ code: "NOT_FOUND" });
 
-      const publicTestCases = input.customArgs
-        ? [{ args: input.customArgs, expected: undefined, isPublic: true }]
-        : input.customInput != null
-          ? [{ input: input.customInput, output: "", isPublic: true }]
-          : prob.testCases.filter((tc) => tc.isPublic);
+      const publicTestCases =
+        input.customArgs !== undefined
+          ? [{ args: input.customArgs, expected: undefined, isPublic: true }]
+          : input.customInput !== undefined
+            ? [{ input: input.customInput, output: "", isPublic: true }]
+            : prob.testCases.filter((tc) => tc.isPublic);
 
       if (publicTestCases.length === 0) {
         return { id: 0, jobId: null, results: [] };
       }
 
-      return dispatchSubmission(ctx.db, ctx.session?.user?.id ?? null, prob, {
+      return dispatchSubmission(ctx.db, ctx.session?.user.id ?? null, prob, {
         code: input.code,
         lang: input.lang,
         kind: "run",
@@ -336,7 +367,7 @@ export const submissionRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       // Logged-in callers may only read their own rows; anonymous
       // callers may only read ownerless (anonymous "run") rows.
-      const userId = ctx.session?.user?.id;
+      const userId = ctx.session?.user.id;
       const [sub] = await ctx.db
         .select()
         .from(submission)
@@ -351,8 +382,10 @@ export const submissionRouter = createTRPCRouter({
       if (!sub) throw new TRPCError({ code: "NOT_FOUND" });
       if (sub.status !== "running") return sub;
 
-      const resultsData = sub.results as any;
-      const jobId = resultsData?.[0]?.jobId;
+      const resultsData = sub.results ?? [];
+      const pendingJobs = resultsData.filter(isPendingJob);
+      const firstPendingJob = pendingJobs[0];
+      const jobId = firstPendingJob?.jobId;
 
       if (!jobId) {
         throw new TRPCError({
@@ -386,22 +419,25 @@ export const submissionRouter = createTRPCRouter({
           .from(submission)
           .where(eq(submission.id, sub.id))
           .limit(1);
-        return { row: current!, won: false as const };
+        if (!current) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Submission not found",
+          });
+        }
+        return { row: current, won: false as const };
       };
 
       // stdin problems fan out to one job per test case (entries carry
       // `expected`). Poll them all and grade by comparing stdout.
-      const pending = resultsData as PendingJob[];
-      if (
-        Array.isArray(pending) &&
-        pending.length > 0 &&
-        pending[0]?.expected !== undefined
-      ) {
+      if (firstPendingJob.expected !== undefined) {
         const STDIN_TIMEOUT_MS = 120_000;
         const age = Date.now() - sub.createdAt.getTime();
 
         const statuses = await Promise.all(
-          pending.map((p) => getJobStatus(p.jobId).catch(() => null)),
+          pendingJobs.map((pendingJob) =>
+            getJobStatus(pendingJob.jobId).catch(() => null),
+          ),
         );
 
         const allDone = statuses.every(
@@ -420,23 +456,23 @@ export const submissionRouter = createTRPCRouter({
         }
 
         const verdicts = statuses.map((s) => s?.result?.verdict);
-        const parsed = pending.map((p, i) => {
+        const parsed = pendingJobs.map((pendingJob, i) => {
           const res = statuses[i]?.result;
           const verdict = res?.verdict;
           const ok =
             verdict === "OK" &&
             normalizeOutput(res?.stdout ?? "") ===
-              normalizeOutput(p.expected ?? "");
+              normalizeOutput(pendingJob.expected ?? "");
           return {
             passed: ok,
             runtime: res?.time,
             memory: res?.memory,
-            input: p.isPublic ? p.input : undefined,
-            expected: p.isPublic ? p.expected : undefined,
-            actual: p.isPublic ? res?.stdout : undefined,
+            input: pendingJob.isPublic ? pendingJob.input : undefined,
+            expected: pendingJob.isPublic ? pendingJob.expected : undefined,
+            actual: pendingJob.isPublic ? res?.stdout : undefined,
             error:
               verdict && verdict !== "OK"
-                ? res?.stderr || res?.errorType || verdict
+                ? (res.stderr ?? res.errorType ?? verdict)
                 : undefined,
           };
         });
@@ -459,7 +495,7 @@ export const submissionRouter = createTRPCRouter({
           testsPassed,
           runtime: Math.max(0, ...parsed.map((r) => r.runtime ?? 0)),
           memory: Math.max(0, ...parsed.map((r) => r.memory ?? 0)),
-          results: parsed as any,
+          results: parsed,
           errorMessage: parsed.find((r) => r.error)?.error ?? undefined,
         });
 
@@ -523,15 +559,24 @@ export const submissionRouter = createTRPCRouter({
         });
       }
 
+      const result = statusResponse.result;
+      if (!result) {
+        const { row } = await finalize({
+          status: "judge_error",
+          errorMessage: "Judge returned no result",
+        });
+        return row;
+      }
+
       const testCases = prob.testCases;
-      const verdict = statusResponse.result?.verdict;
+      const verdict = result.verdict;
       const parsedResults = parseTestResults(
-        statusResponse.result?.stdout || "",
-        statusResponse.result?.stderr || "",
+        result.stdout ?? "",
+        result.stderr ?? "",
         testCases,
       );
       const testsPassed = parsedResults.filter(
-        (r: { passed: boolean }) => r.passed,
+        (result) => result.passed,
       ).length;
 
       let finalStatus:
@@ -553,23 +598,20 @@ export const submissionRouter = createTRPCRouter({
         finalStatus = "runtime_error";
       } else if (verdict === "TO") {
         finalStatus = "time_limit";
-      } else if (verdict === "XX" || statusResponse.status === "failed") {
+      } else {
         finalStatus = "runtime_error";
       }
 
-      const runtime = statusResponse.result?.time;
-      const memory = statusResponse.result?.memory;
+      const runtime = result.time;
+      const memory = result.memory;
 
       const { row: updatedSub, won } = await finalize({
         status: finalStatus,
         testsPassed,
         runtime,
         memory,
-        results: parsedResults as any,
-        errorMessage:
-          statusResponse.result?.stderr ||
-          statusResponse.result?.errorType ||
-          undefined,
+        results: parsedResults,
+        errorMessage: result.stderr ?? result.errorType ?? undefined,
       });
 
       // Update streak only when THIS call performed the transition, and

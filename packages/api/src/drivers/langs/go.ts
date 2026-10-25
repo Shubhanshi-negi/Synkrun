@@ -11,7 +11,7 @@ function goType(t: string): string {
     "integer[]": "[]int",
     "string[]": "[]string",
   };
-  return map[t] || "interface{}";
+  return map[t] ?? "interface{}";
 }
 
 function goParseExpr(type: string, argExpr: string): string {
@@ -40,7 +40,7 @@ function goSerialize(varName: string, type: string): string {
     case "float":
       return `strconv.FormatFloat(${varName}, 'f', -1, 64)`;
     case "string":
-      return `"\\\"" + ${varName} + "\\\"" `;
+      return `strconv.Quote(${varName})`;
     case "boolean":
       return `strconv.FormatBool(${varName})`;
     case "integer[]":
@@ -57,21 +57,8 @@ function goStringLiteral(s: string): string {
 }
 
 /** Determine which imports Go needs based on the types used */
-function goImports(
-  params: FunctionSignature["params"],
-  returnType: string,
-): string {
-  const allTypes = [...params.map((p) => p.type), returnType];
-  const needs = {
-    fmt: true, // always need fmt for Println
-    strings: true, // always need for TrimSpace/parsing
-    strconv: allTypes.some((t) =>
-      ["integer", "float", "boolean", "integer[]"].includes(t),
-    ),
-  };
-
-  const imports = ["fmt", "strings"];
-  if (needs.strconv) imports.push("strconv");
+function goImports(): string {
+  const imports = ["fmt", "strings", "strconv"];
 
   return imports.map((i) => `\t"${i}"`).join("\n");
 }
@@ -99,7 +86,7 @@ export function generateGoDriver(
   return `package main
 
 import (
-${goImports(params, returnType)}
+${goImports()}
 )
 
 // User code
@@ -155,16 +142,15 @@ func serializeStringArray(arr []string) string {
 \tr := "["
 \tfor i, v := range arr {
 \t\tif i > 0 { r += "," }
-\t\tr += "\\"" + v + "\\""
+\t\tr += strconv.Quote(v)
 \t}
 \tr += "]"
 \treturn r
 }
 
 func escapeJson(s string) string {
-\ts = strings.ReplaceAll(s, "\\\\", "\\\\\\\\")
-\ts = strings.ReplaceAll(s, "\\"", "\\\\\\"")
-\treturn s
+\tquoted := strconv.Quote(s)
+\treturn quoted[1 : len(quoted)-1]
 }
 
 func main() {

@@ -123,7 +123,10 @@ function mergePackageJson(
 
 /** The vite plugin import + call for a framework's vitest config. */
 const FRAMEWORK_PLUGIN: Record<Framework, { import: string; call: string }> = {
-  react: { import: `import react from "@vitejs/plugin-react";`, call: "react()" },
+  react: {
+    import: `import react from "@vitejs/plugin-react";`,
+    call: "react()",
+  },
   vue: { import: `import vue from "@vitejs/plugin-vue";`, call: "vue()" },
   svelte: {
     import: `import { svelte } from "@sveltejs/vite-plugin-svelte";`,

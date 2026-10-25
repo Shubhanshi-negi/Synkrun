@@ -27,13 +27,15 @@ function interpolateExpectedRps(
   time: number,
   pattern: { time: number; rps: number }[],
 ): number {
-  if (pattern.length === 0) return 0;
-  if (time <= pattern[0]!.time) return pattern[0]!.rps;
-  if (time >= pattern[pattern.length - 1]!.time)
-    return pattern[pattern.length - 1]!.rps;
+  const first = pattern[0];
+  const last = pattern.at(-1);
+  if (!first || !last) return 0;
+  if (time <= first.time) return first.rps;
+  if (time >= last.time) return last.rps;
   for (let i = 0; i < pattern.length - 1; i++) {
-    const curr = pattern[i]!;
-    const next = pattern[i + 1]!;
+    const curr = pattern[i];
+    const next = pattern[i + 1];
+    if (!curr || !next) continue;
     if (time >= curr.time && time <= next.time) {
       const t =
         curr.time === next.time
@@ -42,7 +44,7 @@ function interpolateExpectedRps(
       return curr.rps + t * (next.rps - curr.rps);
     }
   }
-  return pattern[pattern.length - 1]!.rps;
+  return last.rps;
 }
 
 const SPEEDS = [1, 2, 5, 10];
@@ -97,7 +99,8 @@ export function TrafficChart() {
       {/* Controls bar */}
       <div className="flex items-center gap-2 border-b px-3 py-1">
         {/* Play/Pause */}
-        <button type="button"
+        <button
+          type="button"
           onClick={togglePause}
           className="hover:bg-muted flex size-6 items-center justify-center rounded-md transition-colors"
         >
@@ -106,7 +109,8 @@ export function TrafficChart() {
 
         {/* Mode toggle */}
         <div className="bg-muted flex items-center gap-0.5 rounded-md p-0.5">
-          <button type="button"
+          <button
+            type="button"
             onClick={() => setTimelineMode("live")}
             className={cn(
               "flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
@@ -118,7 +122,8 @@ export function TrafficChart() {
             <Radio size={11} />
             Live
           </button>
-          <button type="button"
+          <button
+            type="button"
             onClick={() => setTimelineMode("review")}
             className={cn(
               "flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-medium transition-colors",
@@ -135,7 +140,8 @@ export function TrafficChart() {
         {/* Speed selector */}
         <div className="bg-muted flex items-center gap-0.5 rounded-md p-0.5">
           {SPEEDS.map((speed) => (
-            <button type="button"
+            <button
+              type="button"
               key={speed}
               onClick={() => setSimulationSpeed(speed)}
               className={cn(
@@ -179,7 +185,7 @@ export function TrafficChart() {
             onClick={
               !isLive
                 ? (e) => {
-                    if (e?.activeLabel != null) {
+                    if (e.activeLabel != null) {
                       handleSeek(Number(e.activeLabel));
                     }
                   }

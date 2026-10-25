@@ -1,11 +1,12 @@
-import { render, screen } from "@testing-library/vue";
 import userEvent from "@testing-library/user-event";
+import { render, screen } from "@testing-library/vue";
 
 import App from "./App.vue";
 import { cases } from "./mc-test";
 
 const star = (n: number) => screen.getByRole("button", { name: "Rate " + n });
-const marks = () => [1, 2, 3, 4, 5].map((n) => star(n).textContent?.trim() ?? "");
+const marks = () =>
+  [1, 2, 3, 4, 5].map((n) => star(n).textContent?.trim() ?? "");
 const filled = () => marks().filter((m) => m === "★").length;
 const status = () => screen.getByRole("status").textContent?.trim() ?? "";
 

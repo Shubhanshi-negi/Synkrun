@@ -37,7 +37,7 @@ export function BookmarkButton({
   const toggleMutation = useMutation(
     trpc.bookmark.toggle.mutationOptions({
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [["bookmark"]] });
+        void queryClient.invalidateQueries({ queryKey: [["bookmark"]] });
       },
     }),
   );

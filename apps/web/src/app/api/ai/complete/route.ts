@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { db, room, eq, roomPolicy } from "@acme/db";
+import { db, eq, room, roomPolicy } from "@acme/db";
 
 import { getSession } from "~/auth/server";
 import { env } from "~/env";

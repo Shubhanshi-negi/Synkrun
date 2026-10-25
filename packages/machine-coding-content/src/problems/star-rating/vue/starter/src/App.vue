@@ -12,7 +12,12 @@ const STARS = [1, 2, 3, 4, 5];
   <main style="font-family: sans-serif; padding: 1rem">
     <h1>Star Rating</h1>
     <div>
-      <button v-for="n in STARS" :key="n" type="button" :aria-label="`Rate ${n}`">
+      <button
+        v-for="n in STARS"
+        :key="n"
+        type="button"
+        :aria-label="`Rate ${n}`"
+      >
         ☆
       </button>
     </div>

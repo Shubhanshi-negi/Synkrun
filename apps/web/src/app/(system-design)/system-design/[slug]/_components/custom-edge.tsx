@@ -24,7 +24,7 @@ function CustomEdgeComponent({
   // traffic this tick. Disconnected / bypassed branches stay dark.
   const sourceRps = useSystemDesignStore((s) => {
     const n = s.nodes.find((node) => node.id === source);
-    return (n?.data?.currentRps) ?? 0;
+    return n?.data.currentRps ?? 0;
   });
 
   const [edgePath] = getBezierPath({

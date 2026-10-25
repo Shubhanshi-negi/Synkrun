@@ -1,8 +1,9 @@
 "use client";
 
+import type { DragEndEvent } from "@dnd-kit/core";
+import type { CellContext, ColumnDef, Row } from "@tanstack/react-table";
+import type { Control } from "react-hook-form";
 import { useMemo } from "react";
-import type {
-  DragEndEvent} from "@dnd-kit/core";
 import {
   closestCenter,
   DndContext,
@@ -13,24 +14,21 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type {
-  ColumnDef,
-  Row} from "@tanstack/react-table";
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { Eye, EyeOff, GripVertical, Plus, Trash2 } from "lucide-react";
-import type { Control} from "react-hook-form";
 import { useFieldArray } from "react-hook-form";
 
+import type { FunctionSignature } from "./function-signature-editor";
+import type { ProblemFormData, ProblemFormInput } from "./problem-form-dialog";
 import { Button } from "~/components/ui/button";
 import {
   FormControl,
@@ -50,16 +48,17 @@ import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
 
 interface TestCase {
-  input: string;
-  output: string;
+  input?: string;
+  output?: string;
+  args?: string[];
+  expected?: string;
   isPublic: boolean;
 }
 
 interface TestCasesTableProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  control: Control<any>;
-  name: string;
-  signature?: any; // FunctionSignature type (lazy typing to avoid import cycles or strictness issues)
+  control: Control<ProblemFormInput, unknown, ProblemFormData>;
+  name: "testCases";
+  signature?: FunctionSignature;
 }
 
 const DraggableRow = ({ row }: { row: Row<TestCase & { id: string }> }) => {
@@ -113,15 +112,17 @@ export function TestCasesTable({
   name,
   signature,
 }: TestCasesTableProps) {
-  const { fields, append, remove, move } = useFieldArray({
+  const { fields, append, remove, move } = useFieldArray<
+    ProblemFormInput,
+    "testCases",
+    "id",
+    ProblemFormData
+  >({
     control,
     name,
   });
 
-  const data = useMemo(
-    () => fields as unknown as (TestCase & { id: string })[],
-    [fields],
-  );
+  const data = useMemo(() => fields as (TestCase & { id: string })[], [fields]);
 
   const columns = useMemo<ColumnDef<TestCase & { id: string }>[]>(() => {
     const baseCols: ColumnDef<TestCase & { id: string }>[] = [
@@ -132,11 +133,13 @@ export function TestCasesTable({
         cell: () => <GripVertical className="size-4" />,
       },
       // Dynamic Input Column(s)
-      ...(signature?.params
-        ? signature.params.map((param: any, pIndex: number) => ({
+      ...(signature
+        ? signature.params.map((param, pIndex) => ({
             accessorKey: `args.${pIndex}`,
             header: `${param.name} (${param.type})`,
-            cell: ({ row }: any) => {
+            cell: ({
+              row,
+            }: CellContext<TestCase & { id: string }, unknown>) => {
               const index = row.index;
               return (
                 <FormField
@@ -150,7 +153,7 @@ export function TestCasesTable({
                           className="min-h-[2.5rem] resize-y py-1.5 font-mono text-xs leading-relaxed"
                           rows={1}
                           {...field}
-                          value={field.value || ""} // Ensure controlled
+                          value={field.value ?? ""}
                         />
                       </FormControl>
                       <FormMessage className="text-[10px]" />
@@ -164,7 +167,9 @@ export function TestCasesTable({
             {
               accessorKey: "input",
               header: "Input",
-              cell: ({ row, table }: any) => {
+              cell: ({
+                row,
+              }: CellContext<TestCase & { id: string }, unknown>) => {
                 const index = row.index;
                 return (
                   <FormField
@@ -286,10 +291,10 @@ export function TestCasesTable({
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (active && over && active.id !== over.id) {
+    if (over && active.id !== over.id) {
       const oldIndex = data.findIndex((item) => item.id === active.id);
       const newIndex = data.findIndex((item) => item.id === over.id);
-      move(oldIndex, newIndex);
+      if (oldIndex >= 0 && newIndex >= 0) move(oldIndex, newIndex);
     }
   }
 
@@ -340,7 +345,7 @@ export function TestCasesTable({
                 items={data.map((item) => item.id)}
                 strategy={verticalListSortingStrategy}
               >
-                {table.getRowModel().rows?.length ? (
+                {table.getRowModel().rows.length > 0 ? (
                   table
                     .getRowModel()
                     .rows.map((row) => <DraggableRow key={row.id} row={row} />)

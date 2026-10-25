@@ -215,7 +215,7 @@ export class SimulationEngine {
         // players add capacity by dropping more nodes on the canvas instead.
         replicas:
           (def.scaling ?? "counter") === "counter"
-            ? Math.max(1, Math.round(data.replicas ?? 1))
+            ? Math.max(1, Math.round(data.replicas))
             : 1,
         scalesReadsOnly: def.scalesReadsOnly ?? false,
         isManaged: (def.scaling ?? "counter") === "managed",
@@ -236,7 +236,10 @@ export class SimulationEngine {
     }
 
     // Build a Map<nodeId, Map<portId, port>> once for O(1) lookups in the edge loop below
-    const portMapByNode = new Map<string, Map<string, SimNode["ports"][number]>>();
+    const portMapByNode = new Map<
+      string,
+      Map<string, SimNode["ports"][number]>
+    >();
     for (const [nodeId, node] of this.graph) {
       const pm = new Map<string, SimNode["ports"][number]>();
       for (const p of node.ports) pm.set(p.id, p);
@@ -255,10 +258,14 @@ export class SimulationEngine {
         targetId: edge.target,
         protocol,
       });
-      const se = this.edgeMap.get(edge.source)!;
+      const se = this.edgeMap.get(edge.source);
+      if (!se) continue;
       se.all.push(edge.target);
-      if (!se.byProtocol.has(protocol)) se.byProtocol.set(protocol, []);
-      se.byProtocol.get(protocol)!.push(edge.target);
+      const protocolTargets = se.byProtocol.get(protocol) ?? [];
+      if (!se.byProtocol.has(protocol)) {
+        se.byProtocol.set(protocol, protocolTargets);
+      }
+      protocolTargets.push(edge.target);
     }
 
     this.topOrder = getTopologicalOrder(nodes, rawEdges);
@@ -314,7 +321,8 @@ export class SimulationEngine {
     reachable.add(start);
     const queue = [start];
     while (queue.length > 0) {
-      const id = queue.shift()!;
+      const id = queue.shift();
+      if (id === undefined) break;
       for (const t of this.downstream(id)) {
         if (t === blocked || reachable.has(t)) continue;
         reachable.add(t);
@@ -333,7 +341,8 @@ export class SimulationEngine {
     const syncReachable = new Set<string>(["traffic-source"]);
     const queue = ["traffic-source"];
     while (queue.length > 0) {
-      const id = queue.shift()!;
+      const id = queue.shift();
+      if (id === undefined) break;
       for (const e of this.edges) {
         if (e.sourceId !== id) continue;
         if (ASYNC_PROTOCOLS.has(e.protocol)) continue;
@@ -383,18 +392,21 @@ export class SimulationEngine {
 
   private getRpsAtTime(time: number): number {
     const p = this.trafficPattern;
-    if (p.length === 0) return 0;
-    if (time <= p[0]!.time) return p[0]!.rps;
-    if (time >= p[p.length - 1]!.time) return p[p.length - 1]!.rps;
+    const first = p[0];
+    const last = p.at(-1);
+    if (!first || !last) return 0;
+    if (time <= first.time) return first.rps;
+    if (time >= last.time) return last.rps;
     for (let i = 0; i < p.length - 1; i++) {
-      const c = p[i]!;
-      const n = p[i + 1]!;
+      const c = p[i];
+      const n = p[i + 1];
+      if (!c || !n) continue;
       if (time >= c.time && time <= n.time) {
         const t = (time - c.time) / (n.time - c.time);
         return c.rps + t * (n.rps - c.rps);
       }
     }
-    return p[p.length - 1]!.rps;
+    return last.rps;
   }
 
   private getAttackRpsAtTime(time: number): number {
@@ -443,7 +455,9 @@ export class SimulationEngine {
         }
       }
     } else {
-      const node = this.graph.get(targets[0]!);
+      const firstTarget = targets[0];
+      if (!firstTarget) return;
+      const node = this.graph.get(firstTarget);
       if (node) {
         node.pending.read += flow.read;
         node.pending.write += flow.write;
@@ -481,7 +495,8 @@ export class SimulationEngine {
   private applyChaos(): void {
     for (let i = 0; i < this.chaosEvents.length; i++) {
       if (this.appliedChaos.has(i)) continue;
-      const evt = this.chaosEvents[i]!;
+      const evt = this.chaosEvents[i];
+      if (!evt) continue;
       if (this.currentTime < evt.time) continue;
       let hit: SimNode | undefined;
       for (const n of this.graph.values()) {
@@ -841,7 +856,7 @@ export class SimulationEngine {
       // tsconfig targets ES2022; toSorted() requires ES2023 — using spread+sort instead
       const sorted = [...this.latencySamples].sort((a, b) => a - b);
       const idx = Math.min(Math.floor(sorted.length * 0.99), sorted.length - 1);
-      const rawP99 = sorted[idx]!;
+      const rawP99 = sorted[idx] ?? 0;
       const p99Reduction = Math.min(this.dnsLatencyReduction, rawP99 * 0.5);
       p99LatencyMs = rawP99 - p99Reduction;
     }

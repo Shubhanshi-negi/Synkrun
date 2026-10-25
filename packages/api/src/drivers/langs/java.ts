@@ -11,7 +11,7 @@ function javaType(t: string): string {
     "integer[]": "int[]",
     "string[]": "String[]",
   };
-  return map[t] || "Object";
+  return map[t] ?? "Object";
 }
 
 function javaParseExpr(type: string, argExpr: string): string {

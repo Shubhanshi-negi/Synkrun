@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -10,15 +11,12 @@ import { ShikiCode } from "~/components/shiki-code";
  * identically.
  */
 export const markdownComponents: Components = {
-  h1: ({ node, children, ...props }) => (
-    <h1
-      className="mt-0 mb-6 text-3xl font-extrabold tracking-tight"
-      {...props}
-    >
+  h1: ({ node: _node, children, ...props }) => (
+    <h1 className="mt-0 mb-6 text-3xl font-extrabold tracking-tight" {...props}>
       {children}
     </h1>
   ),
-  h2: ({ node, children, ...props }) => (
+  h2: ({ node: _node, children, ...props }) => (
     <h2
       className="text-foreground/90 mt-8 mb-4 border-b border-white/5 pb-2 text-xl font-bold tracking-tight"
       {...props}
@@ -26,12 +24,12 @@ export const markdownComponents: Components = {
       {children}
     </h2>
   ),
-  h3: ({ node, children, ...props }) => (
+  h3: ({ node: _node, children, ...props }) => (
     <h3 className="text-foreground/80 mt-6 mb-3 text-lg font-bold" {...props}>
       {children}
     </h3>
   ),
-  p: ({ node, ...props }) => (
+  p: ({ node: _node, ...props }) => (
     <p className="text-foreground/70 mb-4 text-sm leading-relaxed" {...props} />
   ),
   pre: ({ children }) => (
@@ -39,11 +37,12 @@ export const markdownComponents: Components = {
       {children}
     </div>
   ),
-  code: ({ node, className, children, ...props }) => {
-    const match = /language-(\w+)/.exec(className || "");
-    if (match) {
-      const code = String(children).replace(/\n$/, "");
-      return <ShikiCode code={code} lang={match[1]!} />;
+  code: ({ node: _node, className, children, ...props }) => {
+    const match = /language-(\w+)/.exec(className ?? "");
+    const lang = match?.[1];
+    if (lang) {
+      const code = markdownText(children).replace(/\n$/, "");
+      return <ShikiCode code={code} lang={lang} />;
     }
 
     return (
@@ -55,26 +54,26 @@ export const markdownComponents: Components = {
       </code>
     );
   },
-  ul: ({ node, ...props }) => (
+  ul: ({ node: _node, ...props }) => (
     <ul
       className="text-foreground/70 mb-6 ml-5 list-outside list-disc space-y-2 text-sm"
       {...props}
     />
   ),
-  ol: ({ node, ...props }) => (
+  ol: ({ node: _node, ...props }) => (
     <ol
       className="text-foreground/70 mb-6 ml-5 list-outside list-decimal space-y-2 text-sm"
       {...props}
     />
   ),
-  li: ({ node, ...props }) => <li className="pl-1" {...props} />,
-  strong: ({ node, ...props }) => (
+  li: ({ node: _node, ...props }) => <li className="pl-1" {...props} />,
+  strong: ({ node: _node, ...props }) => (
     <strong className="text-foreground/90 font-semibold" {...props} />
   ),
-  em: ({ node, ...props }) => (
+  em: ({ node: _node, ...props }) => (
     <em className="text-foreground/80 italic" {...props} />
   ),
-  a: ({ node, children, ...props }) => (
+  a: ({ node: _node, children, ...props }) => (
     <a
       className="text-primary font-medium underline underline-offset-2 hover:opacity-80"
       target="_blank"
@@ -84,32 +83,44 @@ export const markdownComponents: Components = {
       {children}
     </a>
   ),
-  blockquote: ({ node, ...props }) => (
+  blockquote: ({ node: _node, ...props }) => (
     <blockquote
       className="text-foreground/60 border-primary/40 my-4 border-l-2 pl-4 text-sm italic"
       {...props}
     />
   ),
-  hr: ({ node, ...props }) => <hr className="my-8 border-white/5" {...props} />,
-  table: ({ node, ...props }) => (
+  hr: ({ node: _node, ...props }) => (
+    <hr className="my-8 border-white/5" {...props} />
+  ),
+  table: ({ node: _node, ...props }) => (
     <div className="my-4 overflow-x-auto rounded-lg border border-white/5">
       <table className="w-full text-left text-sm" {...props} />
     </div>
   ),
-  thead: ({ node, ...props }) => (
+  thead: ({ node: _node, ...props }) => (
     <thead className="bg-accent/30 text-foreground/80" {...props} />
   ),
-  tbody: ({ node, ...props }) => (
+  tbody: ({ node: _node, ...props }) => (
     <tbody className="divide-y divide-white/5" {...props} />
   ),
-  tr: ({ node, ...props }) => <tr {...props} />,
-  th: ({ node, ...props }) => (
+  tr: ({ node: _node, ...props }) => <tr {...props} />,
+  th: ({ node: _node, ...props }) => (
     <th className="px-4 py-2 font-semibold" {...props} />
   ),
-  td: ({ node, ...props }) => (
+  td: ({ node: _node, ...props }) => (
     <td className="text-foreground/70 px-4 py-2" {...props} />
   ),
 };
+
+function markdownText(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node);
+  }
+  if (Array.isArray(node)) {
+    return node.map(markdownText).join("");
+  }
+  return "";
+}
 
 /** Render a GitHub-flavored markdown string with the shared component styles. */
 export function Markdown({ children }: { children: string }) {

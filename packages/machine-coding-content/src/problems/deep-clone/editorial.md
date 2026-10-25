@@ -5,7 +5,10 @@ already-cloned objects in a `WeakMap` so shared and circular references resolve
 to a single clone instead of looping forever.
 
 ```ts
-export function deepClone<T>(value: T, seen = new WeakMap<object, unknown>()): T {
+export function deepClone<T>(
+  value: T,
+  seen = new WeakMap<object, unknown>(),
+): T {
   if (value === null || typeof value !== "object") return value;
   if (value instanceof Date) return new Date(value.getTime()) as T;
 

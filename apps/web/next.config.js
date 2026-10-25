@@ -40,8 +40,6 @@ const config = {
     "/api/trpc/**": ["../../packages/machine-coding-content/src/problems/**/*"],
   },
 
-  /** We already do linting and typechecking as separate tasks in CI */
-  typescript: { ignoreBuildErrors: true },
   images: {
     remotePatterns: [
       ...(publicStoragePattern ? [publicStoragePattern] : []),

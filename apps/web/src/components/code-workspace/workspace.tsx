@@ -1,13 +1,20 @@
 "use client";
 
 import type { HocuspocusProvider } from "@hocuspocus/provider";
+import type { editor as MEditor } from "monaco-editor";
 import type { ReactNode } from "react";
 import type * as Y from "yjs";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 // Monaco is loaded once via a pinned CDN loader (see ./monaco/setup) and shared
 // across the whole workspace — it isn't a route-level chunk to defer.
 import { useMonaco } from "@monaco-editor/react";
-import type { editor as MEditor } from "monaco-editor";
 import {
   ChevronDown,
   FolderTree,
@@ -336,8 +343,10 @@ export function Workspace({
   useEffect(() => {
     const initial = pickDefaultFile(ydoc, entryFile);
     if (initial) {
-      setOpenPaths([initial]);
-      setActivePath(initial);
+      startTransition(() => {
+        setOpenPaths([initial]);
+        setActivePath(initial);
+      });
     }
   }, [ydoc, entryFile]);
 
@@ -805,7 +814,9 @@ export function Workspace({
     ...(hasBottomPanel
       ? [{ id: "tests" as const, label: bottomPanel.label }]
       : []),
-    ...(showPreviewColumn ? [{ id: "preview" as const, label: "Preview" }] : []),
+    ...(showPreviewColumn
+      ? [{ id: "preview" as const, label: "Preview" }]
+      : []),
     ...(terminalAvailable
       ? [{ id: "terminal" as const, label: "Terminal" }]
       : []),

@@ -26,6 +26,10 @@ const query = ref("");
 <template>
   <main style="font-family: sans-serif; padding: 1rem; max-width: 320px">
     <h1>Autocomplete</h1>
-    <input aria-label="Search fruit" v-model="query" placeholder="Type a fruit…" />
+    <input
+      aria-label="Search fruit"
+      v-model="query"
+      placeholder="Type a fruit…"
+    />
   </main>
 </template>

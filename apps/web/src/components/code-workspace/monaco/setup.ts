@@ -15,5 +15,7 @@ import { loader } from "@monaco-editor/react";
 const MONACO_VERSION = "0.52.2";
 
 loader.config({
-  paths: { vs: `https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_VERSION}/min/vs` },
+  paths: {
+    vs: `https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_VERSION}/min/vs`,
+  },
 });

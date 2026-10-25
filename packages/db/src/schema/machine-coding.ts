@@ -57,22 +57,28 @@ export const machineCodingAttempt = pgTable(
   },
   (t) => [
     // One attempt row per user per problem — upsert target for the API.
-    unique("machine_coding_attempt_user_problem_uniq").on(t.userId, t.problemSlug),
+    unique("machine_coding_attempt_user_problem_uniq").on(
+      t.userId,
+      t.problemSlug,
+    ),
     // One attempt per upgraded room.
     unique("machine_coding_attempt_ducklet_uniq").on(t.roomId),
   ],
 );
 
-export const machineCodingAttemptRelations = relations(machineCodingAttempt, ({ one }) => ({
-  user: one(user, {
-    fields: [machineCodingAttempt.userId],
-    references: [user.id],
+export const machineCodingAttemptRelations = relations(
+  machineCodingAttempt,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [machineCodingAttempt.userId],
+      references: [user.id],
+    }),
+    room: one(room, {
+      fields: [machineCodingAttempt.roomId],
+      references: [room.id],
+    }),
   }),
-  room: one(room, {
-    fields: [machineCodingAttempt.roomId],
-    references: [room.id],
-  }),
-}));
+);
 
 export type MachineCodingAttempt = typeof machineCodingAttempt.$inferSelect;
 export type NewMachineCodingAttempt = typeof machineCodingAttempt.$inferInsert;

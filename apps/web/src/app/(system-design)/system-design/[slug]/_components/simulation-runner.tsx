@@ -1,9 +1,8 @@
 "use client";
 
-import type { Node } from "@xyflow/react";
 import { useEffect, useRef } from "react";
 
-import type { BlockNodeData, SimulationTick } from "~/lib/system-design/types";
+import type { SimulationTick } from "~/lib/system-design/types";
 import { SimulationEngine } from "~/lib/system-design/simulation-engine";
 import { useSystemDesignStore } from "~/lib/system-design/store";
 import { computeTopologyWarnings } from "~/lib/system-design/topology-warnings";
@@ -27,11 +26,7 @@ export function useSimulation() {
     // Only pre-compute once
     if (precomputedRef.current) return;
 
-    const engine = new SimulationEngine(
-      nodes,
-      edges,
-      level,
-    );
+    const engine = new SimulationEngine(nodes, edges, level);
 
     const allTicks: SimulationTick[] = [];
     while (!engine.isComplete()) {
@@ -44,12 +39,9 @@ export function useSimulation() {
     // Compute results
     const totalCost = nodes.reduce((sum, n) => {
       const d = n.data;
-      return sum + d.definition.costPerMonth * (d.replicas ?? 1);
+      return sum + d.definition.costPerMonth * d.replicas;
     }, 0);
-    const topologyWarnings = computeTopologyWarnings(
-      nodes,
-      edges,
-    );
+    const topologyWarnings = computeTopologyWarnings(nodes, edges);
 
     // A required block can be reachable yet carry no traffic — bypassed by a
     // parallel path (e.g. app-server → stream-processor skipping the queue).

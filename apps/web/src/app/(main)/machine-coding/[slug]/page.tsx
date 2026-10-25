@@ -15,8 +15,8 @@ import { useWebContainerSupport } from "~/components/code-workspace/webcontainer
 import { CountdownTimer } from "~/components/countdown-timer";
 import { ProblemNav } from "~/components/machine-coding/problem-nav";
 import { ProblemSheet } from "~/components/machine-coding/problem-sheet";
-import { VariantSelector } from "~/components/machine-coding/variant-selector";
 import { machineCodingExtension } from "~/components/machine-coding/side-panel";
+import { VariantSelector } from "~/components/machine-coding/variant-selector";
 import { useSignIn } from "~/components/sign-in-dialog";
 import {
   AlertDialog,
@@ -30,6 +30,7 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
+import { track } from "~/lib/analytics";
 import {
   clearLocalAttempt,
   patchLocalAttempt,
@@ -37,7 +38,6 @@ import {
   readVariantPref,
   writeVariantPref,
 } from "~/lib/machine-coding/local-store";
-import { track } from "~/lib/analytics";
 import { useLocalMachineCodingDoc } from "~/lib/machine-coding/use-local-doc";
 import { prewarmWebContainer } from "~/lib/webcontainer/boot";
 import {

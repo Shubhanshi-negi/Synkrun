@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2,
@@ -237,7 +243,8 @@ function LanguageSelector({
   value: Language;
   onChange: (lang: Language) => void;
 }) {
-  const current = LANGUAGES.find((l) => l.id === value)!;
+  const current = LANGUAGES.find((l) => l.id === value);
+  if (!current) return null;
 
   return (
     <DropdownMenu>
@@ -296,7 +303,10 @@ export default function PlaygroundPage() {
   const outputRef = useRef<HTMLDivElement>(null);
 
   const currentCode = codes[language] ?? "";
-  const currentLang = LANGUAGES.find((l) => l.id === language)!;
+  const currentLang = LANGUAGES.find((l) => l.id === language);
+  if (!currentLang) {
+    throw new Error(`No playground configuration exists for ${language}`);
+  }
 
   const setCode = useCallback(
     (value: string) => {
@@ -321,7 +331,7 @@ export default function PlaygroundPage() {
   // Poll for job status
   const statusQuery = useQuery(
     trpc.playground.status.queryOptions(
-      { jobId: jobId! },
+      { jobId: jobId ?? "" },
       {
         enabled: !!jobId,
         refetchInterval: (query) => {
@@ -339,11 +349,13 @@ export default function PlaygroundPage() {
     const { status, result: jobResult } = statusQuery.data;
 
     if (status === "completed" || status === "failed") {
-      if (jobResult) {
-        setResult(jobResult);
-      }
-      setJobId(null);
-      setIsRunning(false);
+      startTransition(() => {
+        if (jobResult) {
+          setResult(jobResult);
+        }
+        setJobId(null);
+        setIsRunning(false);
+      });
     }
   }, [statusQuery.data, jobId]);
 

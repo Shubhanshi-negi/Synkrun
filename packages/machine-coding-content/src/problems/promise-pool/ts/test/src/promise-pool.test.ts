@@ -1,5 +1,5 @@
-import { promisePool } from "./promise-pool";
 import { cases } from "./mc-test";
+import { promisePool } from "./promise-pool";
 
 const resolveAfter = <T>(ms: number, value: T) =>
   new Promise<T>((resolve) => setTimeout(() => resolve(value), ms));
@@ -56,7 +56,10 @@ cases("promisePool", [
     input: "2 tasks, limit 5",
     expected: ["x", "y"],
     run: () =>
-      promisePool([() => resolveAfter(10, "x"), () => resolveAfter(10, "y")], 5),
+      promisePool(
+        [() => resolveAfter(10, "x"), () => resolveAfter(10, "y")],
+        5,
+      ),
   },
   {
     name: "resolves an empty task list to []",

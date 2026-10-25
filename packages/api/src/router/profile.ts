@@ -53,10 +53,9 @@ export const profileRouter = createTRPCRouter({
         );
 
       // Display streak as 0 if stale (lastSolveDate < yesterday)
-      const today = new Date().toISOString().split("T")[0]!;
       const yesterday = new Date(Date.now() - 86400000)
         .toISOString()
-        .split("T")[0]!;
+        .slice(0, 10);
       const displayStreak =
         profile.lastSolveDate && profile.lastSolveDate >= yesterday
           ? profile.currentStreak
@@ -300,10 +299,10 @@ export const profileRouter = createTRPCRouter({
         .set({
           bio: input.bio,
           fullname: input.fullname,
-          githubUrl: input.githubUrl || null,
-          twitterUrl: input.twitterUrl || null,
-          linkedinUrl: input.linkedinUrl || null,
-          websiteUrl: input.websiteUrl || null,
+          githubUrl: input.githubUrl?.length ? input.githubUrl : null,
+          twitterUrl: input.twitterUrl?.length ? input.twitterUrl : null,
+          linkedinUrl: input.linkedinUrl?.length ? input.linkedinUrl : null,
+          websiteUrl: input.websiteUrl?.length ? input.websiteUrl : null,
         })
         .where(eq(userProfile.userId, ctx.session.user.id))
         .returning();

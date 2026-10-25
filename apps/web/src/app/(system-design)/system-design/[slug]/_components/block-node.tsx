@@ -12,7 +12,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "~/components/ui/select";
 import { PROTOCOL_COLORS } from "~/lib/system-design/block-registry";
 import { PROVIDER_ICONS } from "~/lib/system-design/provider-icons";
@@ -57,7 +56,7 @@ function BlockNodeComponent({ id, data }: NodeProps) {
     readLoadPercent,
     writeLoadPercent,
   } = blockData;
-  const replicas = blockData.replicas ?? 1;
+  const replicas = blockData.replicas;
   const phase = useSystemDesignStore((s) => s.phase);
   const removeBlock = useSystemDesignStore((s) => s.removeBlock);
   const duplicateBlock = useSystemDesignStore((s) => s.duplicateBlock);
@@ -85,10 +84,7 @@ function BlockNodeComponent({ id, data }: NodeProps) {
     edges.some((e) => {
       if (e.target !== id) return false;
       const src = nodes.find((n) => n.id === e.source);
-      return (
-        (src?.data)?.definition.type ===
-        requiredDistributor
-      );
+      return src?.data.definition.type === requiredDistributor;
     });
   const replicasGated = supportsReplicas && !hasDistributor;
 
@@ -109,8 +105,7 @@ function BlockNodeComponent({ id, data }: NodeProps) {
           .filter((e) => e.source === id)
           .reduce((sum, e) => {
             const target = nodes.find((n) => n.id === e.target);
-            const reps =
-              (target?.data)?.replicas ?? 1;
+            const reps = target?.data.replicas ?? 1;
             return sum + reps;
           }, 0)
       : 0;
@@ -161,7 +156,8 @@ function BlockNodeComponent({ id, data }: NodeProps) {
       {/* Action buttons (building only, not for start block) */}
       {phase === "building" && !isStartBlock && (
         <div className="absolute -top-8 left-1/2 flex -translate-x-1/2 gap-1 opacity-0 transition-opacity group-hover/node:opacity-100">
-          <button type="button"
+          <button
+            type="button"
             className="bg-card hover:bg-muted flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] shadow-sm transition-colors"
             onClick={(e) => {
               e.stopPropagation();
@@ -180,7 +176,8 @@ function BlockNodeComponent({ id, data }: NodeProps) {
                 : "Duplicate"}
             </span>
           </button>
-          <button type="button"
+          <button
+            type="button"
             className="bg-card hover:bg-destructive hover:text-destructive-foreground flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] shadow-sm transition-colors"
             onClick={(e) => {
               e.stopPropagation();
@@ -260,7 +257,7 @@ function BlockNodeComponent({ id, data }: NodeProps) {
               </div>
             </SelectTrigger>
             <SelectContent>
-              {definition.providers!.map((p) => (
+              {definition.providers?.map((p) => (
                 <SelectItem
                   key={p.provider}
                   value={p.provider}
@@ -317,7 +314,8 @@ function BlockNodeComponent({ id, data }: NodeProps) {
             )}
           </div>
           <div className="flex items-center gap-1">
-            <button type="button"
+            <button
+              type="button"
               className="bg-muted hover:bg-muted/70 flex size-5 items-center justify-center rounded transition-colors disabled:opacity-30"
               disabled={replicas <= 1 || replicasGated}
               onClick={(e) => {
@@ -336,7 +334,8 @@ function BlockNodeComponent({ id, data }: NodeProps) {
             >
               {replicas}×
             </span>
-            <button type="button"
+            <button
+              type="button"
               className="bg-muted hover:bg-muted/70 flex size-5 items-center justify-center rounded transition-colors disabled:opacity-30"
               disabled={replicasGated}
               onClick={(e) => {
@@ -488,7 +487,8 @@ function BlockNodeComponent({ id, data }: NodeProps) {
             {/* Per-link unlink buttons */}
             {phase === "building" &&
               connectedEdges.map((edge) => (
-                <button type="button"
+                <button
+                  type="button"
                   key={edge.id}
                   className="absolute opacity-0 transition-opacity group-hover/node:opacity-100"
                   style={{
@@ -547,7 +547,8 @@ function BlockNodeComponent({ id, data }: NodeProps) {
             {/* Per-link unlink buttons */}
             {phase === "building" &&
               connectedEdges.map((edge) => (
-                <button type="button"
+                <button
+                  type="button"
                   key={edge.id}
                   className="absolute opacity-0 transition-opacity group-hover/node:opacity-100"
                   style={{

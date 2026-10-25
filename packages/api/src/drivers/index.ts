@@ -57,8 +57,8 @@ export function generateDriverWithTestCases(
 
   const testData: TestData[] = testCases.map((tc, index) => ({
     index,
-    args: tc.args || [],
-    expected: tc.expected || tc.output || "",
+    args: tc.args ?? [],
+    expected: tc.expected ?? tc.output ?? "",
     isPublic: hidePrivate ? tc.isPublic : true,
     paramTypes: params.map((p) => p.type),
     returnType,

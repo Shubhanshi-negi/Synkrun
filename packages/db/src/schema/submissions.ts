@@ -62,11 +62,14 @@ export const submissionRelations = relations(submission, ({ one }) => ({
 // Types
 export interface TestResult {
   passed: boolean;
+  jobId?: string;
   input?: string; // Only for public test cases
   expected?: string;
   actual?: string;
   runtime?: number;
+  memory?: number;
   error?: string;
+  isPublic?: boolean;
 }
 
 export type Submission = typeof submission.$inferSelect;

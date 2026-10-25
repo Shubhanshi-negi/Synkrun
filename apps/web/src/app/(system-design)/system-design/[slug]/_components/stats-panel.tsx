@@ -1,6 +1,5 @@
 "use client";
 
-import type { BlockNodeData } from "~/lib/system-design/types";
 import { useSystemDesignStore } from "~/lib/system-design/store";
 import { cn } from "~/lib/utils";
 
@@ -14,7 +13,7 @@ export function StatsPanel() {
 
   const budgetUsed = nodes.reduce((sum, n) => {
     const d = n.data;
-    return sum + d.definition.costPerMonth * (d.replicas ?? 1);
+    return sum + d.definition.costPerMonth * d.replicas;
   }, 0);
 
   // Only compute stats up to the current tick position

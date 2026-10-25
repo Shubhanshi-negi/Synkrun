@@ -56,7 +56,8 @@ cases("debounce", [
   },
   {
     name: "measures the delay from the last call",
-    input: "call, wait 60ms, call again, then check at 60ms / 100ms after the 2nd call",
+    input:
+      "call, wait 60ms, call again, then check at 60ms / 100ms after the 2nd call",
     expected: { at60: 0, at100: 1 },
     run: () => {
       vi.useFakeTimers();

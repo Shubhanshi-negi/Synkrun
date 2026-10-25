@@ -11,6 +11,4 @@ let handled = 0;
 const onClick = throttle(() => {
   out.textContent = "handled " + ++handled + "×";
 }, 500);
-document
-  .querySelector("#tick")
-  .addEventListener("click", onClick);
+document.querySelector("#tick").addEventListener("click", onClick);

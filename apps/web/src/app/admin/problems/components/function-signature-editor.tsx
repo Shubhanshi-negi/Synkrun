@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import { Card, CardContent } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -93,12 +92,12 @@ export function FunctionSignatureEditor({
   value,
   onChange,
 }: FunctionSignatureEditorProps) {
-  const [fnName, setFnName] = useState(value?.fnName || "solution");
+  const [fnName, setFnName] = useState(value?.fnName ?? "solution");
   const [params, setParams] = useState<Parameter[]>(
-    value?.params || [{ id: "1", name: "nums", type: "integer[]" }],
+    value?.params ?? [{ id: "1", name: "nums", type: "integer[]" }],
   );
   const [returnType, setReturnType] = useState<ParamType>(
-    value?.returnType || "integer[]",
+    value?.returnType ?? "integer[]",
   );
 
   useEffect(() => {
@@ -222,10 +221,8 @@ export function FunctionSignatureEditor({
           class Solution:
           <br />
           &nbsp;&nbsp;&nbsp;&nbsp;def {fnName}(self,{" "}
-          {params
-            .map((p) => `${p.name}: ${TYPE_MAP.py?.[p.type] || "Any"}`)
-            .join(", ")}
-          ) -&gt; {TYPE_MAP.py?.[returnType] || "Any"}:
+          {params.map((p) => `${p.name}: ${TYPE_MAP.py[p.type]}`).join(", ")})
+          -&gt; {TYPE_MAP.py[returnType]}:
           <br />
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Your code here
           <br />

@@ -106,7 +106,7 @@ export function CodeEditor({
           run: (view) => {
             const { doc } = view.state;
             const changes = indentRange(view.state, 0, doc.length);
-            if (changes) view.dispatch({ changes });
+            if (!changes.empty) view.dispatch({ changes });
             onSave?.();
             return true;
           },

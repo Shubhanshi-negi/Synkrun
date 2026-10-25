@@ -60,7 +60,7 @@ export function getFileText(doc: Y.Doc, path: string): Y.Text | undefined {
 /** Plain-string snapshot of every file: `{ "src/App.tsx": "..." }`. */
 export function readAllFiles(doc: Y.Doc): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const [path, text] of getFilesMap(doc)) out[path] = text.toString();
+  for (const [path, text] of getFilesMap(doc)) out[path] = text.toJSON();
   return out;
 }
 
@@ -76,7 +76,7 @@ export function createFile(doc: Y.Doc, path: string, content = ""): Y.Text {
   text = new Y.Text();
   if (content) text.insert(0, content);
   doc.transact(() => {
-    files.set(p, text!);
+    files.set(p, text);
     ensureParentDirs(doc, p);
   });
   return text;
@@ -86,16 +86,15 @@ export function createFile(doc: Y.Doc, path: string, content = ""): Y.Text {
 export function writeFile(doc: Y.Doc, path: string, content: string): Y.Text {
   const p = normalizePath(path);
   const files = getFilesMap(doc);
-  let text = files.get(p);
+  const text = files.get(p) ?? new Y.Text();
   doc.transact(() => {
-    if (!text) {
-      text = new Y.Text();
+    if (!files.has(p)) {
       files.set(p, text);
       ensureParentDirs(doc, p);
     }
     patchText(text, content);
   });
-  return text!;
+  return text;
 }
 
 /**
@@ -152,7 +151,7 @@ export function renameFile(doc: Y.Doc, from: string, to: string): void {
   const files = getFilesMap(doc);
   const existing = files.get(src);
   if (!existing || files.has(dst)) return;
-  const content = existing.toString();
+  const content = existing.toJSON();
   doc.transact(() => {
     files.delete(src);
     const text = new Y.Text();
@@ -212,26 +211,32 @@ export function buildTree(doc: Y.Doc): TreeNode {
     for (const dir of ancestorDirs(`${path}/x`)) dirSet.add(dir);
   }
 
-  const root: TreeNode = { name: "", path: "", type: "dir", children: [] };
-  const nodes = new Map<string, TreeNode>([["", root]]);
+  type DirectoryNode = TreeNode & { type: "dir"; children: TreeNode[] };
+  const root: DirectoryNode = {
+    name: "",
+    path: "",
+    type: "dir",
+    children: [],
+  };
+  const nodes = new Map<string, DirectoryNode>([["", root]]);
 
-  const ensureDirNode = (path: string): TreeNode => {
+  const ensureDirNode = (path: string): DirectoryNode => {
     const existing = nodes.get(path);
     if (existing) return existing;
-    const node: TreeNode = {
+    const node: DirectoryNode = {
       name: path.slice(path.lastIndexOf("/") + 1),
       path,
       type: "dir",
       children: [],
     };
     nodes.set(path, node);
-    ensureDirNode(dirname(path)).children!.push(node);
+    ensureDirNode(dirname(path)).children.push(node);
     return node;
   };
 
   for (const path of [...dirSet].sort()) ensureDirNode(path);
   for (const path of fileSet) {
-    ensureDirNode(dirname(path)).children!.push({
+    ensureDirNode(dirname(path)).children.push({
       name: path.slice(path.lastIndexOf("/") + 1),
       path,
       type: "file",

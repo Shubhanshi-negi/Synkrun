@@ -2,6 +2,8 @@
 
 import { Lightbulb } from "lucide-react";
 
+import { Markdown } from "~/components/markdown";
+import { ShikiCode } from "~/components/shiki-code";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,9 +16,6 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
-import { Markdown } from "~/components/markdown";
-import { ShikiCode } from "~/components/shiki-code";
-
 import { useMachineCodingTests } from "./use-tests";
 
 const LANG_BY_EXT: Record<string, string> = {

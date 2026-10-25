@@ -6,12 +6,12 @@ import type { CollabRole } from "@acme/auth/collab-token";
 import { signCollabToken } from "@acme/auth/collab-token";
 import { roomPolicy } from "@acme/db";
 import {
+  machineCodingAttempt,
   room,
   roomKindEnum,
   roomMember,
   roomMessage,
   roomSnapshot,
-  machineCodingAttempt,
   userProfile,
 } from "@acme/db/schema";
 import { getEditablePaths, getProblem } from "@acme/machine-coding-content";
@@ -82,10 +82,7 @@ export const roomRouter = createTRPCRouter({
         conditions.push(eq(room.ownerId, ctx.session.user.id));
       } else if (ctx.session?.user) {
         conditions.push(
-          or(
-            eq(room.isPublic, true),
-            eq(room.ownerId, ctx.session.user.id),
-          ),
+          or(eq(room.isPublic, true), eq(room.ownerId, ctx.session.user.id)),
         );
       } else {
         conditions.push(eq(room.isPublic, true));
@@ -189,9 +186,10 @@ export const roomRouter = createTRPCRouter({
       ]);
 
       // Get current user's membership status
+      const currentUserId = ctx.session?.user.id;
       let currentUserStatus = null;
-      if (ctx.session?.user) {
-        const member = members.find((m) => m.userId === ctx.session!.user.id);
+      if (currentUserId) {
+        const member = members.find((m) => m.userId === currentUserId);
         if (member) {
           currentUserStatus = member.status;
         }
@@ -201,7 +199,7 @@ export const roomRouter = createTRPCRouter({
       // require ownership or an ACTIVE membership.
       if (
         !result.isPublic &&
-        result.ownerId !== ctx.session!.user.id &&
+        result.ownerId !== currentUserId &&
         currentUserStatus !== "active"
       ) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Access denied" });
@@ -271,7 +269,10 @@ export const roomRouter = createTRPCRouter({
         .limit(1);
 
       if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Ducklet not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Ducklet not found",
+        });
       }
 
       if (!existing.isPublic) {
@@ -405,7 +406,10 @@ export const roomRouter = createTRPCRouter({
         .limit(1);
 
       if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Ducklet not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Ducklet not found",
+        });
       }
 
       // Owner, or an active editor member — viewers cannot write thumbnails.
@@ -843,7 +847,7 @@ export const roomRouter = createTRPCRouter({
             code: "BAD_REQUEST",
             message: "User is already invited",
           });
-        } else if (existingMember.status === "requested") {
+        } else {
           // If they requested, just approve them by updating to active/invited
           await ctx.db
             .update(roomMember)
@@ -933,7 +937,7 @@ export const roomRouter = createTRPCRouter({
           return { success: true, message: "Already a member" };
         if (existingMember.status === "requested")
           return { success: true, message: "Request already sending" };
-        if (existingMember.status === "invited") {
+        else {
           // If invited, auto-accept
           await ctx.db
             .update(roomMember)
@@ -1209,7 +1213,10 @@ export const roomRouter = createTRPCRouter({
         .limit(1);
 
       if (!existing) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Ducklet not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Ducklet not found",
+        });
       }
 
       const userId = ctx.session.user.id;
@@ -1356,10 +1363,7 @@ export const roomRouter = createTRPCRouter({
           creatorUsername: userProfile.username,
         })
         .from(roomSnapshot)
-        .leftJoin(
-          userProfile,
-          eq(roomSnapshot.createdBy, userProfile.userId),
-        )
+        .leftJoin(userProfile, eq(roomSnapshot.createdBy, userProfile.userId))
         .where(eq(roomSnapshot.roomId, input.roomId))
         .orderBy(desc(roomSnapshot.createdAt));
 

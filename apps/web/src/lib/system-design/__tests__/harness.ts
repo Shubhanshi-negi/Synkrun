@@ -17,6 +17,7 @@ import type {
   LevelDefinition,
   PortProtocol,
   SimulationResults,
+  SimulationTick,
 } from "../types.ts";
 import { getBlockDefinition, TRAFFIC_SOURCE_BLOCK } from "../block-registry.ts";
 import { SimulationEngine } from "../simulation-engine.ts";
@@ -30,7 +31,7 @@ export interface DesignSpec {
     { type: string; provider?: string; replicas?: number }
   >;
   // each edge: [fromKey, toKey, protocol?] — protocol defaults to "HTTP"
-  edges: Array<[string, string] | [string, string, PortProtocol]>;
+  edges: ([string, string] | [string, string, PortProtocol])[];
 }
 
 export interface ScoreSummary {
@@ -110,9 +111,11 @@ function makeNodeData(
 function median(sorted: number[]): number {
   if (sorted.length === 0) return 0;
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 1
-    ? sorted[mid]!
-    : (sorted[mid - 1]! + sorted[mid]!) / 2;
+  const upper = sorted[mid];
+  if (upper === undefined) return 0;
+  if (sorted.length % 2 === 1) return upper;
+  const lower = sorted[mid - 1];
+  return lower === undefined ? upper : (lower + upper) / 2;
 }
 
 // ─── buildGraph ──────────────────────────────────────────────────────────────
@@ -176,8 +179,7 @@ export function buildGraph(spec: DesignSpec): {
   const edges: Edge[] = spec.edges.map((tuple) => {
     const fromKey = tuple[0];
     const toKey = tuple[1];
-    const proto: PortProtocol =
-      (tuple[2] as PortProtocol | undefined) ?? "HTTP";
+    const proto: PortProtocol = tuple[2] ?? "HTTP";
 
     if (!allIds.has(fromKey)) {
       throw new Error(
@@ -220,28 +222,21 @@ export function scoreOnce(
 ): SimulationResults {
   const { nodes, edges } = buildGraph(spec);
 
-  const engine = new SimulationEngine(
-    nodes as Node<BlockNodeData>[],
-    edges as Edge[],
-    level,
-  );
+  const engine = new SimulationEngine(nodes, edges, level);
 
-  const allTicks = [];
+  const allTicks: SimulationTick[] = [];
   while (!engine.isComplete()) {
     allTicks.push(engine.tick());
   }
 
   // Total cost: sum of costPerMonth × replicas for every node
   const totalCost = nodes.reduce((sum, n) => {
-    const d = n.data as BlockNodeData;
-    return sum + d.definition.costPerMonth * (d.replicas ?? 1);
+    const d = n.data;
+    return sum + d.definition.costPerMonth * d.replicas;
   }, 0);
 
   // Topology warnings (SPOF, unreachable, no-cache, etc.)
-  const topologyWarnings = computeTopologyWarnings(
-    nodes as Node<BlockNodeData>[],
-    edges as Edge[],
-  );
+  const topologyWarnings = computeTopologyWarnings(nodes, edges);
 
   // Idle-required check — mirrors simulation-runner.tsx exactly:
   // A required block that is reachable but carries no traffic the whole run
@@ -255,7 +250,7 @@ export function scoreOnce(
       }
     }
     for (const n of nodes) {
-      const data = n.data as BlockNodeData;
+      const data = n.data;
       if (!requiredTypes.has(data.definition.type)) continue;
       if ((peakRps.get(n.id) ?? 0) >= 1) continue;
       topologyWarnings.push({
@@ -280,11 +275,14 @@ export function score(
   spec: DesignSpec,
   runs = 9,
 ): ScoreSummary {
+  if (!Number.isInteger(runs) || runs < 1) {
+    throw new Error("runs must be a positive integer");
+  }
   // Deterministic cost: compute once from the graph (no RNG involved)
   const { nodes } = buildGraph(spec);
   const costPerMonth = nodes.reduce((sum, n) => {
-    const d = n.data as BlockNodeData;
-    return sum + d.definition.costPerMonth * (d.replicas ?? 1);
+    const d = n.data;
+    return sum + d.definition.costPerMonth * d.replicas;
   }, 0);
   const costPercent =
     level.budget > 0 ? (costPerMonth / level.budget) * 100 : 0;
@@ -305,6 +303,11 @@ export function score(
   const sortedUptime = [...results.map((r) => r.uptimePercent)].sort(
     (a, b) => a - b,
   );
+  const minStars = sortedStars[0];
+  const maxStars = sortedStars.at(-1);
+  if (minStars === undefined || maxStars === undefined) {
+    throw new Error("Simulation produced no results");
+  }
 
   const passCount = results.filter((r) => r.passed).length;
 
@@ -318,8 +321,8 @@ export function score(
 
   return {
     stars: median(sortedStars),
-    minStars: sortedStars[0]!,
-    maxStars: sortedStars[sortedStars.length - 1]!,
+    minStars,
+    maxStars,
     passed: passCount > runs / 2,
     costPerMonth,
     costPercent: Math.round(costPercent * 100) / 100,

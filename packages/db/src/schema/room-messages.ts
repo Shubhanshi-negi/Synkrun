@@ -27,9 +27,7 @@ export const roomMessage = pgTable(
     content: text("content").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (t) => [
-    index("ducklet_message_room_created_idx").on(t.roomId, t.createdAt),
-  ],
+  (t) => [index("ducklet_message_room_created_idx").on(t.roomId, t.createdAt)],
 );
 
 export const roomMessageRelations = relations(roomMessage, ({ one }) => ({

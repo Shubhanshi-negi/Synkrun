@@ -79,7 +79,13 @@ function PagerButton({
     );
   }
   return (
-    <Button variant="ghost" size="icon" className="size-7" title={label} asChild>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="size-7"
+      title={label}
+      asChild
+    >
       <Link href={to}>{children}</Link>
     </Button>
   );

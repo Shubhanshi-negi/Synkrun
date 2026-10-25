@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
+
+import { env } from "~/env";
 
 // Chat lives in Postgres, not the Y.Doc — delivered live via the
 // `room.onEvent` SSE subscription. This is the chat panel's view shape;
 // messages come from `room.chatHistory` + the `chat:message` event. The
 // websocket this hook manages now only carries editor state and presence.
 
-const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+const SOCKET_URL = env.NEXT_PUBLIC_SOCKET_URL;
 
 interface UseSocketRoomOptions {
   roomId: string;
@@ -94,8 +95,13 @@ export function useSocketRoom({
       onClose: () => setIsConnected(false),
       onDestroy: () => setIsConnected(false),
     });
+    const awareness = newProvider.awareness;
+    if (!awareness) {
+      newProvider.destroy();
+      throw new Error("Hocuspocus provider did not initialize awareness");
+    }
 
-    setProvider(newProvider);
+    startTransition(() => setProvider(newProvider));
 
     newProvider.setAwarenessField("user", {
       id: userId,
@@ -105,7 +111,7 @@ export function useSocketRoom({
     });
 
     const handleAwarenessUpdate = () => {
-      const states = newProvider.awareness!.getStates();
+      const states = awareness.getStates();
       const activeUsers: UserPresence[] = [];
 
       states.forEach((state) => {
@@ -113,7 +119,7 @@ export function useSocketRoom({
         if (user) {
           activeUsers.push({
             id: user.id,
-            username: user.username ?? (user as { name?: string }).name ?? "",
+            username: user.username,
             photoURL: user.photoURL,
             cursor: user.cursor,
             color: user.color,
@@ -123,10 +129,10 @@ export function useSocketRoom({
       setUsers(activeUsers);
     };
 
-    newProvider.awareness!.on("change", handleAwarenessUpdate);
+    awareness.on("change", handleAwarenessUpdate);
 
     return () => {
-      newProvider.awareness!.off("change", handleAwarenessUpdate);
+      awareness.off("change", handleAwarenessUpdate);
       newProvider.destroy();
     };
   }, [roomId, userId, username, photoURL, userColor, ydoc, token]);

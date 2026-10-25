@@ -2,7 +2,10 @@
  * Return a deep copy of `value`: nested objects/arrays cloned recursively,
  * `Date`s duplicated, and circular references handled.
  */
-export function deepClone<T>(value: T, seen = new WeakMap<object, unknown>()): T {
+export function deepClone<T>(
+  value: T,
+  seen = new WeakMap<object, unknown>(),
+): T {
   if (value === null || typeof value !== "object") return value;
   if (value instanceof Date) return new Date(value.getTime()) as T;
 

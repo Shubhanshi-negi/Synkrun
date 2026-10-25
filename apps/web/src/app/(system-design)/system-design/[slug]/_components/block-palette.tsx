@@ -12,7 +12,7 @@ import {
   Shield,
 } from "lucide-react";
 
-import type { BlockCategory, BlockNodeData } from "~/lib/system-design/types";
+import type { BlockCategory } from "~/lib/system-design/types";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
 import {
@@ -44,10 +44,6 @@ export function BlockPalette() {
     messaging: true,
     security: true,
   });
-  const [defaultProviders, setDefaultProviders] = useState<
-    Record<string, string>
-  >({});
-
   const nodes = useSystemDesignStore((s) => s.nodes);
   const level = useSystemDesignStore((s) => s.level);
   const phase = useSystemDesignStore((s) => s.phase);
@@ -55,7 +51,7 @@ export function BlockPalette() {
 
   const budgetUsed = nodes.reduce((sum, n) => {
     const d = n.data;
-    return sum + d.definition.costPerMonth * (d.replicas ?? 1);
+    return sum + d.definition.costPerMonth * d.replicas;
   }, 0);
 
   const onDragStart = (e: DragEvent, blockType: string, provider: string) => {
@@ -81,7 +77,8 @@ export function BlockPalette() {
             return (
               <div key={category}>
                 {idx > 0 && <Separator className="my-1" />}
-                <button type="button"
+                <button
+                  type="button"
                   className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-colors"
                   onClick={() =>
                     setExpandedCategories((s) => ({
@@ -103,8 +100,7 @@ export function BlockPalette() {
                 {isCatExpanded && (
                   <div className="mt-1 grid grid-cols-2 gap-1 pl-1">
                     {blocks.map((block) => {
-                      const currentDefault =
-                        defaultProviders[block.type] ?? block.name;
+                      const currentDefault = block.name;
                       const providerData = block.providers?.find(
                         (p) => p.provider === currentDefault,
                       );

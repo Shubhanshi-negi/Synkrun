@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type * as Y from "yjs";
 import {
   createContext,
   useCallback,
@@ -10,7 +11,6 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type * as Y from "yjs";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 

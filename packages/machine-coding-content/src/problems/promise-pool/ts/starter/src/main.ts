@@ -12,5 +12,7 @@ const tasks = [1, 2, 3, 4, 5].map((n) => async () => {
 promisePool(tasks, 2).then((results) => {
   app.innerHTML =
     "<h1>Promise Pool</h1>" +
-    "<p>squares (limit 2): <code>" + JSON.stringify(results) + "</code></p>";
+    "<p>squares (limit 2): <code>" +
+    JSON.stringify(results) +
+    "</code></p>";
 });

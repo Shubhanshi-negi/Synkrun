@@ -77,7 +77,7 @@ export function AvatarPicker({
     trpc.profile.updateAvatar.mutationOptions({
       onSuccess: () => {
         toast.success("Avatar updated");
-        queryClient.invalidateQueries({ queryKey: [["profile"]] });
+        void queryClient.invalidateQueries({ queryKey: [["profile"]] });
         onOpenChange(false);
       },
       onError: (err) => {
@@ -107,7 +107,8 @@ export function AvatarPicker({
         {/* Grid of presets */}
         <div className="grid grid-cols-6 gap-2">
           {allSeeds.map((seed) => (
-            <button type="button"
+            <button
+              type="button"
               key={seed}
               onClick={() => setSelected(seed)}
               className={cn(

@@ -25,11 +25,7 @@ const makeComment = (text: string): Comment => ({
   children: [],
 });
 
-function addReply(
-  nodes: Comment[],
-  parentId: string,
-  text: string,
-): Comment[] {
+function addReply(nodes: Comment[], parentId: string, text: string): Comment[] {
   return nodes.map((n) =>
     n.id === parentId
       ? { ...n, children: [...n.children, makeComment(text)] }
@@ -47,12 +43,7 @@ function reply(id: string, text: string) {
   <main style="font-family: sans-serif; padding: 1rem">
     <h1>Nested Comments</h1>
     <ul>
-      <CommentNode
-        v-for="c in tree"
-        :key="c.id"
-        :node="c"
-        :on-reply="reply"
-      />
+      <CommentNode v-for="c in tree" :key="c.id" :node="c" :on-reply="reply" />
     </ul>
   </main>
 </template>

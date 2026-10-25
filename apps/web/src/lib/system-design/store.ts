@@ -8,6 +8,7 @@ import type {
 } from "@xyflow/react";
 import { applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { create } from "zustand";
 
 import type {
@@ -36,23 +37,28 @@ export function getReactFlowInstance() {
 // --- localStorage helpers ---
 const STORAGE_PREFIX = "sd-canvas-";
 
-interface SavedCanvas {
-  nodes: {
-    id: string;
-    position: { x: number; y: number };
-    definitionType: string;
-    providerName: string;
-    replicas?: number;
-    isStartBlock?: boolean;
-  }[];
-  edges: {
-    id: string;
-    source: string;
-    target: string;
-    sourceHandle: string | null;
-    targetHandle: string | null;
-  }[];
-}
+const savedCanvasSchema = z.object({
+  nodes: z.array(
+    z.object({
+      id: z.string(),
+      position: z.object({ x: z.number(), y: z.number() }),
+      definitionType: z.string(),
+      providerName: z.string(),
+      replicas: z.number().optional(),
+      isStartBlock: z.boolean().optional(),
+    }),
+  ),
+  edges: z.array(
+    z.object({
+      id: z.string(),
+      source: z.string(),
+      target: z.string(),
+      sourceHandle: z.string().nullable(),
+      targetHandle: z.string().nullable(),
+    }),
+  ),
+});
+type SavedCanvas = z.infer<typeof savedCanvasSchema>;
 
 function saveCanvas(slug: string, nodes: Node<BlockNodeData>[], edges: Edge[]) {
   try {
@@ -77,8 +83,9 @@ function saveCanvas(slug: string, nodes: Node<BlockNodeData>[], edges: Edge[]) {
       })),
     };
     localStorage.setItem(STORAGE_PREFIX + slug, JSON.stringify(data));
-  } catch {
+  } catch (error) {
     // localStorage full or unavailable
+    console.warn("Unable to persist system design canvas", error);
   }
 }
 
@@ -89,7 +96,8 @@ function loadCanvas(
   try {
     const raw = localStorage.getItem(STORAGE_PREFIX + slug);
     if (!raw) return null;
-    const data: SavedCanvas = JSON.parse(raw);
+    const parsed: unknown = JSON.parse(raw);
+    const data: SavedCanvas = savedCanvasSchema.parse(parsed);
 
     // Reconstruct nodes from saved definitions
     // Cache provider Maps per definitionType for O(1) lookup inside the loop
@@ -168,7 +176,7 @@ function loadCanvas(
     // for the labeled Server slots; now there's a single backend pool port).
     const nodeTypeById = new Map<string, string>();
     for (const n of nodes) {
-      nodeTypeById.set(n.id, (n.data).definition.type);
+      nodeTypeById.set(n.id, n.data.definition.type);
     }
 
     const edges: Edge[] = data.edges.map((e) => {
@@ -190,7 +198,8 @@ function loadCanvas(
     });
 
     return { nodes, edges };
-  } catch {
+  } catch (error) {
+    console.warn("Unable to restore system design canvas", error);
     return null;
   }
 }
@@ -241,8 +250,8 @@ function pushHistory(nodes: Node<BlockNodeData>[], edges: Edge[]) {
   // Discard any redo states
   session.history = session.history.slice(0, session.historyIndex + 1);
   session.history.push({
-    nodes: JSON.parse(JSON.stringify(nodes)),
-    edges: JSON.parse(JSON.stringify(edges)),
+    nodes: structuredClone(nodes),
+    edges: structuredClone(edges),
   });
   if (session.history.length > MAX_HISTORY) {
     session.history.shift();
@@ -258,8 +267,8 @@ function pushHistory(nodes: Node<BlockNodeData>[], edges: Edge[]) {
 function resetHistory(nodes: Node<BlockNodeData>[], edges: Edge[]) {
   session.history = [
     {
-      nodes: JSON.parse(JSON.stringify(nodes)),
-      edges: JSON.parse(JSON.stringify(edges)),
+      nodes: structuredClone(nodes),
+      edges: structuredClone(edges),
     },
   ];
   session.historyIndex = 0;
@@ -414,7 +423,7 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
     const { nodes, level } = get();
     const budgetUsed = nodes.reduce((sum, n) => {
       const d = n.data;
-      return sum + d.definition.costPerMonth * (d.replicas ?? 1);
+      return sum + d.definition.costPerMonth * d.replicas;
     }, 0);
     if (level && budgetUsed + definition.costPerMonth > level.budget) {
       toast.error("Budget exceeded", {
@@ -451,7 +460,6 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
     let position = { x: 300, y: 200 };
     if (rf) {
       // Get the center of the current viewport in flow coordinates
-      const { x, y, zoom } = rf.getViewport();
       const container = document.querySelector(".react-flow");
       if (container) {
         const rect = container.getBoundingClientRect();
@@ -482,7 +490,7 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
   removeBlock: (nodeId) => {
     const { nodes, edges } = get();
     const node = nodes.find((n) => n.id === nodeId);
-    if ((node?.data!)?.isStartBlock) return;
+    if (node?.data.isStartBlock) return;
     const newNodes = nodes.filter((n) => n.id !== nodeId);
     const newEdges = edges.filter(
       (e) => e.source !== nodeId && e.target !== nodeId,
@@ -558,7 +566,7 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
       const others = nodes.reduce((sum, n) => {
         if (n.id === nodeId) return sum;
         const d = n.data;
-        return sum + d.definition.costPerMonth * (d.replicas ?? 1);
+        return sum + d.definition.costPerMonth * d.replicas;
       }, 0);
       const affordable = Math.floor(
         (level.budget - others) / data.definition.costPerMonth,
@@ -570,12 +578,10 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
         });
       }
     }
-    if (next === (data.replicas ?? 1)) return;
+    if (next === data.replicas) return;
 
     const newNodes = nodes.map((n) =>
-      n.id === nodeId
-        ? { ...n, data: { ...(n.data), replicas: next } }
-        : n,
+      n.id === nodeId ? { ...n, data: { ...n.data, replicas: next } } : n,
     );
     set({ nodes: newNodes });
     persistCanvas({ ...get(), nodes: newNodes });
@@ -584,8 +590,7 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
 
   onConnect: (connection) => {
     const { nodes, edges } = get();
-    if (!isValidConnection(connection, nodes, edges))
-      return;
+    if (!isValidConnection(connection, nodes, edges)) return;
 
     const newEdge: Edge = {
       id: `edge-${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}`,
@@ -618,7 +623,7 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
         return {
           ...n,
           data: {
-            ...(n.data),
+            ...n.data,
             currentRps: stats.rps,
             currentLatencyMs: stats.latencyMs,
             loadPercent: stats.loadPercent,
@@ -638,7 +643,6 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
   setFullTimeline: (timeline) => set({ simulationTimeline: timeline }),
   timelineMode: "live",
   setTimelineMode: (mode) => {
-    const store = useSystemDesignStore.getState();
     if (mode === "review") {
       // Pause playback and jump to end so full timeline is visible
       set({ timelineMode: mode, simulationPaused: true });
@@ -659,7 +663,7 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
         return {
           ...n,
           data: {
-            ...(n.data),
+            ...n.data,
             currentRps: stats.rps,
             currentLatencyMs: stats.latencyMs,
             loadPercent: stats.loadPercent,
@@ -681,12 +685,13 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
   undo: () => {
     if (session.historyIndex <= 0) return;
     session.historyIndex--;
-    const snapshot = session.history[session.historyIndex]!;
+    const nextIndex = session.historyIndex - 1;
+    const snapshot = session.history[nextIndex];
+    if (!snapshot) return;
+    session.historyIndex = nextIndex;
     session.skipHistory = true;
-    const nodes = JSON.parse(
-      JSON.stringify(snapshot.nodes),
-    ) as Node<BlockNodeData>[];
-    const edges = JSON.parse(JSON.stringify(snapshot.edges)) as Edge[];
+    const nodes = structuredClone(snapshot.nodes);
+    const edges = structuredClone(snapshot.edges);
     set({ nodes, edges, canUndo: session.historyIndex > 0, canRedo: true });
     persistCanvas({ ...get(), nodes, edges });
     session.skipHistory = false;
@@ -695,12 +700,13 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
   redo: () => {
     if (session.historyIndex >= session.history.length - 1) return;
     session.historyIndex++;
-    const snapshot = session.history[session.historyIndex]!;
+    const nextIndex = session.historyIndex + 1;
+    const snapshot = session.history[nextIndex];
+    if (!snapshot) return;
+    session.historyIndex = nextIndex;
     session.skipHistory = true;
-    const nodes = JSON.parse(
-      JSON.stringify(snapshot.nodes),
-    ) as Node<BlockNodeData>[];
-    const edges = JSON.parse(JSON.stringify(snapshot.edges)) as Edge[];
+    const nodes = structuredClone(snapshot.nodes);
+    const edges = structuredClone(snapshot.edges);
     set({
       nodes,
       edges,
@@ -714,9 +720,8 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
   // Sidebar
   sidebarMode: (() => {
     try {
-      return (
-        (localStorage.getItem("sd-sidebar-mode") as "fixed" | "auto") ?? "fixed"
-      );
+      const storedMode = localStorage.getItem("sd-sidebar-mode");
+      return storedMode === "auto" ? "auto" : "fixed";
     } catch {
       return "fixed" as const;
     }
@@ -725,7 +730,9 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
     set({ sidebarMode: mode });
     try {
       localStorage.setItem("sd-sidebar-mode", mode);
-    } catch {}
+    } catch (error) {
+      console.warn("Unable to persist system design sidebar preference", error);
+    }
   },
 
   reset: () => {
@@ -733,7 +740,9 @@ export const useSystemDesignStore = create<SystemDesignStore>((set, get) => ({
     if (level) {
       try {
         localStorage.removeItem(STORAGE_PREFIX + level.slug);
-      } catch {}
+      } catch (error) {
+        console.warn("Unable to clear saved system design canvas", error);
+      }
     }
     set({
       phase: "building",

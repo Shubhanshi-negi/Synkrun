@@ -21,7 +21,12 @@ const cards = ref<Card[]>([]);
   <main style="font-family: sans-serif; padding: 1rem">
     <h1>Kanban Board</h1>
     <div style="display: flex; gap: 16px; align-items: flex-start">
-      <section v-for="name in COLUMNS" :key="name" :aria-label="name" style="flex: 1">
+      <section
+        v-for="name in COLUMNS"
+        :key="name"
+        :aria-label="name"
+        style="flex: 1"
+      >
         <h2 style="font-size: 1rem">{{ name }}</h2>
       </section>
     </div>

@@ -6,12 +6,12 @@ covers the happy path — come back here when something doesn't work.
 
 ## What you'll be running
 
-| Process            | Where it runs              | Port | Started by                |
-| ------------------ | -------------------------- | ---- | ------------------------- |
-| Next.js web app    | host (`pnpm dev`)          | 3001 | `pnpm dev` / `dev:next`   |
-| Hocuspocus server  | host (`pnpm dev`)          | 5000 | `pnpm dev`                |
-| PostgreSQL 15      | Docker                     | 5433 | `make services`           |
-| Redis 7            | Docker                     | 6380 | `make services`           |
+| Process           | Where it runs     | Port | Started by              |
+| ----------------- | ----------------- | ---- | ----------------------- |
+| Next.js web app   | host (`pnpm dev`) | 3001 | `pnpm dev` / `dev:next` |
+| Hocuspocus server | host (`pnpm dev`) | 5000 | `pnpm dev`              |
+| PostgreSQL 15     | Docker            | 5433 | `make services`         |
+| Redis 7           | Docker            | 6380 | `make services`         |
 
 Two things people trip on immediately:
 
@@ -64,22 +64,22 @@ must set up OAuth for at least one provider to be able to sign in (next
 section). Env vars are validated at startup with `@t3-oss/env`; here's what's
 actually required:
 
-| Variable | Required? | Local value / notes |
-| --- | --- | --- |
-| `POSTGRES_URL` | ✅ | `postgres://dev:dev@localhost:5433/codingducks` — matches docker-compose. Note port **5433**. |
-| `BETTER_AUTH_SECRET` | ✅ | Any non-empty string locally (`openssl rand -base64 32` for real ones). The hocuspocus server refuses to start without it. |
-| `BETTER_AUTH_GITHUB_ID` / `_SECRET` | ✅ non-empty | Real values only if you sign in with GitHub; placeholders otherwise. |
-| `BETTER_AUTH_GOOGLE_ID` / `_SECRET` | ✅ non-empty | Real values only if you sign in with Google; placeholders otherwise. |
-| `BASE_URL` | ✅ | `http://localhost:3001` — **must be 3001**, it's the auth base URL. |
-| `PRODUCTION_URL` | ✅ | Any valid URL in dev, e.g. `https://example.com`. |
-| `JUDGE_API_TOKEN` | ✅ non-empty | Placeholder is enough to boot; real token needed to actually run code submissions. |
-| `JUDGE_API_URL` | ❌ | Set this to your own judge service URL to enable code execution. |
+| Variable                                                                                | Required?    | Local value / notes                                                                                                                     |
+| --------------------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_URL`                                                                          | ✅           | `postgres://dev:dev@localhost:5433/codingducks` — matches docker-compose. Note port **5433**.                                           |
+| `BETTER_AUTH_SECRET`                                                                    | ✅           | Any non-empty string locally (`openssl rand -base64 32` for real ones). The hocuspocus server refuses to start without it.              |
+| `BETTER_AUTH_GITHUB_ID` / `_SECRET`                                                     | ✅ non-empty | Real values only if you sign in with GitHub; placeholders otherwise.                                                                    |
+| `BETTER_AUTH_GOOGLE_ID` / `_SECRET`                                                     | ✅ non-empty | Real values only if you sign in with Google; placeholders otherwise.                                                                    |
+| `BASE_URL`                                                                              | ✅           | `http://localhost:3001` — **must be 3001**, it's the auth base URL.                                                                     |
+| `PRODUCTION_URL`                                                                        | ✅           | Any valid URL in dev, e.g. `https://example.com`.                                                                                       |
+| `JUDGE_API_TOKEN`                                                                       | ✅ non-empty | Placeholder is enough to boot; real token needed to actually run code submissions.                                                      |
+| `JUDGE_API_URL`                                                                         | ❌           | Set this to your own judge service URL to enable code execution.                                                                        |
 | `R2_BUCKET`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT` | ✅ non-empty | Placeholders are enough to boot (`R2_ENDPOINT` must look like a URL); real Cloudflare R2 credentials only needed for uploads/snapshots. |
-| `R2_PUBLIC_URL` | ❌ | Set this to your public storage domain to display uploaded images and snapshots. |
-| `NEXT_PUBLIC_SOCKET_URL` | ✅ | `http://localhost:5000` (the hocuspocus server). |
-| `ALLOWED_WS_ORIGINS` | ❌ | Leave empty in dev (= allow all origins). |
-| `MISTRAL_API_KEY` | ❌ | Unset = AI ghost-text completion is disabled; everything else works. |
-| `NEXT_PUBLIC_UMAMI_SRC` / `_WEBSITE_ID` | ❌ | Analytics; leave empty. |
+| `R2_PUBLIC_URL`                                                                         | ❌           | Set this to your public storage domain to display uploaded images and snapshots.                                                        |
+| `NEXT_PUBLIC_SOCKET_URL`                                                                | ✅           | `http://localhost:5000` (the hocuspocus server).                                                                                        |
+| `ALLOWED_WS_ORIGINS`                                                                    | ❌           | Leave empty in dev (= allow all origins).                                                                                               |
+| `MISTRAL_API_KEY`                                                                       | ❌           | Unset = AI ghost-text completion is disabled; everything else works.                                                                    |
+| `NEXT_PUBLIC_UMAMI_SRC` / `_WEBSITE_ID`                                                 | ❌           | Analytics; leave empty.                                                                                                                 |
 
 > **Why "non-empty placeholder"?** Several packages validate their env eagerly
 > at import time and treat empty strings as missing. The app won't boot if
@@ -91,7 +91,7 @@ actually required:
 Sign-in is OAuth-only (GitHub + Google), so you need at least one real app.
 
 **GitHub** (fastest): [github.com/settings/developers](https://github.com/settings/developers)
-→ *New OAuth App*:
+→ _New OAuth App_:
 
 - Homepage URL: `http://localhost:3001`
 - Authorization callback URL: `http://localhost:3001/api/auth/callback/github`
@@ -99,7 +99,7 @@ Sign-in is OAuth-only (GitHub + Google), so you need at least one real app.
 Put the client ID/secret in `BETTER_AUTH_GITHUB_ID` / `BETTER_AUTH_GITHUB_SECRET`.
 
 **Google**: [console.cloud.google.com](https://console.cloud.google.com/apis/credentials)
-→ *Create credentials → OAuth client ID → Web application*:
+→ _Create credentials → OAuth client ID → Web application_:
 
 - Authorized JavaScript origin: `http://localhost:3001`
 - Authorized redirect URI: `http://localhost:3001/api/auth/callback/google`
@@ -158,14 +158,38 @@ fast.
 
 ### What works without real credentials
 
-| Feature | Needs |
-| --- | --- |
-| Browsing, auth, profiles, dashboard | nothing extra |
-| Ducklets (collab editing, WebContainer, chat) | nothing extra |
-| System Design game | nothing extra |
-| Running code (Problems, Playground) | real `JUDGE_API_TOKEN` |
-| File uploads / ducklet snapshots | real `R2_*` credentials |
-| AI ghost-text completion | `MISTRAL_API_KEY` |
+| Feature                                       | Needs                   |
+| --------------------------------------------- | ----------------------- |
+| Browsing, auth, profiles, dashboard           | nothing extra           |
+| Ducklets (collab editing, WebContainer, chat) | nothing extra           |
+| System Design game                            | nothing extra           |
+| Running code (Problems, Playground)           | real `JUDGE_API_TOKEN`  |
+| File uploads / ducklet snapshots              | real `R2_*` credentials |
+| AI ghost-text completion                      | `MISTRAL_API_KEY`       |
+
+## Deploy the web app to Vercel
+
+Import `Shubhanshi-negi/Synkrun` as a Vercel project and set its **Root
+Directory** to `apps/web`. Keep the detected Next.js framework preset and leave
+the build and output directory settings at their defaults. The repository
+requires Node.js 24 and pnpm 10.19.0; Vercel reads the Node version from the
+root `package.json` and the workspace package manager from the root manifest.
+
+Copy the applicable variable names from [`.env.production.example`](./.env.production.example)
+into Vercel's Production, Preview, and Development environment settings. Use
+the production deployment's HTTPS origin for `BASE_URL`, `PRODUCTION_URL`,
+and `NEXT_PUBLIC_BASE_URL`. Register that same origin with each OAuth provider
+and configure callback URLs ending in `/api/auth/callback/github` or
+`/api/auth/callback/google`.
+
+Vercel serves the web app only. Provide a reachable PostgreSQL database and
+Cloudflare R2 credentials. Set `NEXT_PUBLIC_SOCKET_URL` to a separately hosted
+Hocuspocus server's `wss://` URL; deploy `apps/hocuspocus-server` as a
+persistent Node/container service with the same `POSTGRES_URL` and
+`BETTER_AUTH_SECRET`, and set `ALLOWED_WS_ORIGINS` to the web app's HTTPS
+origin. Vercel serverless functions do not host the long-lived WebSocket
+server. Code submissions also require your own judge service; set
+`JUDGE_API_URL` and `JUDGE_API_TOKEN` to enable them.
 
 ## Day-to-day commands
 
@@ -183,7 +207,7 @@ pnpm -F @acme/nextjs test:calibration   # System Design calibration tests
 ## Troubleshooting
 
 **"Invalid environment variables" on startup**
-The error names the offending vars. Remember empty strings count as *missing*
+The error names the offending vars. Remember empty strings count as _missing_
 for `JUDGE_API_TOKEN`, the `R2_*` vars, and the hocuspocus server's
 `POSTGRES_URL`/`BETTER_AUTH_SECRET` — use placeholders, not `""`. Also check
 you edited the **root** `.env` (not a file inside `apps/web`).

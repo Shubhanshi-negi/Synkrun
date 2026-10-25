@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Cell, ResponsiveContainer, Bar, BarChart, XAxis } from "recharts";
 import { Loader2, Users } from "lucide-react";
+import { Bar, BarChart, Cell, ResponsiveContainer, XAxis } from "recharts";
 
 import { cn } from "~/lib/utils";
 import { useTRPC } from "~/trpc/react";
@@ -72,14 +72,12 @@ export function CommunityComparison({
       {/* Headline: cost percentile + distribution */}
       <div>
         <div className="mb-1 flex items-baseline justify-between">
-          <span className="text-muted-foreground text-xs">
-            Cost efficiency
-          </span>
+          <span className="text-muted-foreground text-xs">Cost efficiency</span>
           <span className="text-muted-foreground text-[10px]">
             ${data.cost.value.toFixed(0)}/mo
           </span>
         </div>
-        <div className="text-2xl font-bold tabular-nums text-green-500">
+        <div className="text-2xl font-bold text-green-500 tabular-nums">
           Beats {data.cost.percentile.toFixed(0)}%
         </div>
         <div className="text-muted-foreground text-[11px]">
@@ -117,20 +115,16 @@ export function CommunityComparison({
 
       {/* Secondary metrics */}
       <div className="space-y-2.5 border-t pt-3">
-        {data.latency && (
-          <PercentileBar
-            label="Latency"
-            percentile={data.latency.percentile}
-            value={`${data.latency.value.toFixed(0)}ms`}
-          />
-        )}
-        {data.uptime && (
-          <PercentileBar
-            label="Reliability"
-            percentile={data.uptime.percentile}
-            value={`${data.uptime.value.toFixed(1)}%`}
-          />
-        )}
+        <PercentileBar
+          label="Latency"
+          percentile={data.latency.percentile}
+          value={`${data.latency.value.toFixed(0)}ms`}
+        />
+        <PercentileBar
+          label="Reliability"
+          percentile={data.uptime.percentile}
+          value={`${data.uptime.value.toFixed(1)}%`}
+        />
       </div>
     </div>
   );

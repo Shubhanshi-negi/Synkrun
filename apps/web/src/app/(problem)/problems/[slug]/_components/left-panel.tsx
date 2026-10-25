@@ -91,7 +91,7 @@ export function LeftPanel({
           <div className="mb-4 flex items-center gap-3">
             <h1 className="text-foreground text-xl font-bold tracking-tight">
               <span className="text-muted-foreground mr-2 font-mono text-base font-medium">
-                {problem.displayOrder || problem.id}.
+                {problem.displayOrder ?? problem.id}.
               </span>
               {problem.title}
             </h1>
@@ -171,14 +171,15 @@ export function LeftPanel({
             </div>
           )}
 
-          {problem.hints && problem.hints.length > 0 && (
+          {problem.hints.length > 0 && (
             <div className="mt-8 space-y-2">
               {problem.hints.map((hint, i) => (
                 <div
                   key={hint.slice(0, 60)}
                   className="overflow-hidden rounded-lg border border-white/5"
                 >
-                  <button type="button"
+                  <button
+                    type="button"
                     onClick={() => toggleHint(i)}
                     aria-expanded={!!openHints[i]}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-semibold transition-colors hover:bg-white/[0.03]"
@@ -209,7 +210,7 @@ export function LeftPanel({
             </div>
           )}
 
-          {problem.tags && problem.tags.length > 0 && (
+          {problem.tags.length > 0 && (
             <div className="mt-12 border-t border-white/5 pt-8">
               <h3 className="text-muted-foreground mb-4 text-xs font-bold tracking-widest uppercase">
                 Related Topics
@@ -228,7 +229,7 @@ export function LeftPanel({
             </div>
           )}
 
-          {problem.companies && problem.companies.length > 0 && (
+          {problem.companies.length > 0 && (
             <div className="mt-8 border-t border-white/5 pt-8">
               <h3 className="text-muted-foreground mb-4 text-xs font-bold tracking-widest uppercase">
                 Companies

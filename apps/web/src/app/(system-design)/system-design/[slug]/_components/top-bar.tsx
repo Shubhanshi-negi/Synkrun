@@ -18,8 +18,6 @@ const DIFFICULTY_COLORS = {
   advanced: "bg-red-500/10 text-red-500",
 };
 
-const SPEEDS = [1, 2, 5, 10];
-
 export function TopBar() {
   const level = useSystemDesignStore((s) => s.level);
   const phase = useSystemDesignStore((s) => s.phase);

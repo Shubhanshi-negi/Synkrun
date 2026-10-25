@@ -37,8 +37,22 @@ export function ProblemDetailClient() {
   const [codes, setCodes] = useState<Record<string, string>>({});
   const [language, setLanguage] = useState<Language>(() => {
     if (typeof window === "undefined") return "py";
+    const storedLanguage = localStorage.getItem("problem-editor-language");
+    const supportedLanguages: Language[] = [
+      "py",
+      "js",
+      "ts",
+      "java",
+      "cpp",
+      "c",
+      "rs",
+      "go",
+      "rb",
+      "php",
+    ];
     return (
-      (localStorage.getItem("problem-editor-language") as Language) || "py"
+      supportedLanguages.find((candidate) => candidate === storedLanguage) ??
+      "py"
     );
   });
   const [leftTab, setLeftTab] = useState("description");
@@ -72,7 +86,7 @@ export function ProblemDetailClient() {
 
   const { data: savedDrafts } = useQuery(
     trpc.codeDraft.get.queryOptions(
-      { problemId: problem?.id! },
+      { problemId: problem?.id ?? 0 },
       { enabled: !!problem?.id && isAuthenticated },
     ),
   );
@@ -86,7 +100,7 @@ export function ProblemDetailClient() {
 
   const resultsQuery = useQuery(
     trpc.submission.getResults.queryOptions(
-      { id: pollingId! },
+      { id: pollingId ?? 0 },
       {
         enabled: !!pollingId,
         refetchInterval: (query) => {
@@ -104,7 +118,7 @@ export function ProblemDetailClient() {
     if (resultsQuery.data && resultsQuery.data.status !== "running") {
       const data = resultsQuery.data;
       if (pollingType === "run") {
-        setConsoleOutput(data.results || []);
+        setConsoleOutput(data.results ?? []);
         setActiveTab("console");
         if (data.status === "judge_error") {
           toast.error("Judge error — please try again");
@@ -124,7 +138,7 @@ export function ProblemDetailClient() {
         } else {
           toast.error(`Submission Failed: ${data.status.replace("_", " ")}`);
         }
-        refetchSubmissions();
+        void refetchSubmissions();
         setLeftTab("submissions");
         setSelectedSubmission(data);
       }
@@ -142,8 +156,8 @@ export function ProblemDetailClient() {
       problem.id !== lastProblemIdRef.current ||
       (!draftsLoadedRef.current && savedDrafts)
     ) {
-      const starterCodes = problem.starterCode! || {};
-      const mergedCodes = { ...starterCodes, ...(savedDrafts || {}) };
+      const starterCodes = problem.starterCode ?? {};
+      const mergedCodes = { ...starterCodes, ...(savedDrafts ?? {}) };
       setCodes(mergedCodes);
 
       const availableLangs = Object.keys(mergedCodes);
@@ -163,7 +177,7 @@ export function ProblemDetailClient() {
     localStorage.setItem("problem-editor-language", language);
   }, [language]);
 
-  const currentCode = codes[language] || "";
+  const currentCode = codes[language] ?? "";
 
   const setCode = (newCode: string) => {
     setCodes((prev) => ({ ...prev, [language]: newCode }));
@@ -210,7 +224,6 @@ export function ProblemDetailClient() {
   const runMutation = useMutation(
     trpc.submission.run.mutationOptions({
       onSuccess: (data) => {
-        if (!data) return;
         setPollingId(data.id);
       },
       onError: (err) => {
@@ -223,7 +236,6 @@ export function ProblemDetailClient() {
   const submitMutation = useMutation(
     trpc.submission.submit.mutationOptions({
       onSuccess: (data) => {
-        if (!data) return;
         setPollingId(data.id);
       },
       onError: (err) => {
@@ -297,7 +309,7 @@ export function ProblemDetailClient() {
     );
   }
 
-  const availableLanguages = Object.keys(problem.starterCode! || {});
+  const availableLanguages = Object.keys(problem.starterCode ?? {});
 
   // --- Render ---
 

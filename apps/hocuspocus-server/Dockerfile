@@ -4,7 +4,7 @@
 # ============================================
 # STAGE 1: Base
 # ============================================
-FROM node:23-bookworm-slim AS base
+FROM node:24-bookworm-slim AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 

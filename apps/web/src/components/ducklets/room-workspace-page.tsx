@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,13 +21,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import type { MachineCodingContext } from "~/components/machine-coding/types";
 import type { ChatMessage, UserPresence } from "~/hooks/use-socket";
 import { authClient } from "~/auth/client";
 import { useWebContainerSupport } from "~/components/code-workspace/webcontainer-support";
-import { machineCodingExtension } from "~/components/machine-coding/side-panel";
-import type { MachineCodingContext } from "~/components/machine-coding/types";
 import { RenameDuckletDialog } from "~/components/ducklets/rename-ducklet-dialog";
 import { ShareModal } from "~/components/ducklets/share-modal";
+import { machineCodingExtension } from "~/components/machine-coding/side-panel";
 import { useSignIn } from "~/components/sign-in-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
@@ -88,9 +88,9 @@ export function RoomWorkspacePage({
 
   // Auth state
   const { data: session } = authClient.useSession();
-  const userId = session?.user?.id;
-  const username = session?.user?.name ?? "Anonymous";
-  const photoURL = session?.user?.image ?? undefined;
+  const userId = session?.user.id;
+  const username = session?.user.name ?? "Anonymous";
+  const photoURL = session?.user.image ?? undefined;
 
   // Fetch ducklet data
   const {
@@ -124,33 +124,39 @@ export function RoomWorkspacePage({
   // Chat history from Postgres; live messages via the SSE subscription.
   // Flat oldest→newest list, deduped by id so the optimistic append and its
   // echo collapse to one.
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-
-  const appendMessage = useCallback((msg: ChatMessage) => {
-    setMessages((prev) =>
-      prev.some((m) => m.id === msg.id) ? prev : [...prev, msg],
-    );
-  }, []);
-
   const { data: chatHistory } = useQuery(
     trpc.room.chatHistory.queryOptions(
       { roomId, limit: 50 },
       { enabled: !!roomId && !!userId, refetchOnWindowFocus: false },
     ),
   );
-
-  useEffect(() => {
-    if (!chatHistory) return;
-    setMessages(
-      [...chatHistory.items].reverse().map((m) => ({
+  const [liveMessages, setLiveMessages] = useState<ChatMessage[]>([]);
+  const historyMessages = useMemo(
+    () =>
+      [...(chatHistory?.items ?? [])].reverse().map((m) => ({
         id: m.id,
         userId: m.userId ?? "",
         username: m.username,
         text: m.content,
         timestamp: m.createdAt.getTime(),
       })),
+    [chatHistory],
+  );
+  const messages = useMemo(() => {
+    const messagesById = new Map(
+      historyMessages.map((message) => [message.id, message]),
     );
-  }, [chatHistory]);
+    for (const message of liveMessages) {
+      messagesById.set(message.id, message);
+    }
+    return [...messagesById.values()].sort((a, b) => a.timestamp - b.timestamp);
+  }, [historyMessages, liveMessages]);
+
+  const appendMessage = useCallback((msg: ChatMessage) => {
+    setLiveMessages((prev) =>
+      prev.some((m) => m.id === msg.id) ? prev : [...prev, msg],
+    );
+  }, []);
 
   const sendMessageMutation = useMutation(
     trpc.room.sendMessage.mutationOptions({
@@ -494,7 +500,7 @@ export function RoomWorkspacePage({
         <ResizablePanelGroup direction="horizontal">
           {/* Main Editor Area */}
           <ResizablePanel defaultSize={80} minSize={50}>
-            {provider && ydoc ? (
+            {provider ? (
               <Workspace
                 provider={provider}
                 ydoc={ydoc}

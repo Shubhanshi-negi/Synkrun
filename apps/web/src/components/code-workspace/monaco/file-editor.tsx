@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import type { HocuspocusProvider } from "@hocuspocus/provider";
 import type { Monaco } from "@monaco-editor/react";
 import type { editor as MEditor } from "monaco-editor";
-import type { HocuspocusProvider } from "@hocuspocus/provider";
+import type * as Y from "yjs";
+import { useEffect, useRef } from "react";
 import { initVimMode } from "monaco-vim";
 import { useTheme } from "next-themes";
 import { MonacoBinding } from "y-monaco";
-import type * as Y from "yjs";
 
 import { useEditorSettings } from "~/hooks/use-editor-settings";
-
 import { useRemoteCursorStyles } from "./remote-cursors";
 import { defineEditorThemes, themeName } from "./theme";
 

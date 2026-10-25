@@ -30,10 +30,7 @@ function buildAdjacency(
   nodes: Node<BlockNodeData>[],
   edges: Edge[],
 ): Adjacency {
-  const outgoing = new Map<
-    string,
-    { targetId: string; protocol: string }[]
-  >();
+  const outgoing = new Map<string, { targetId: string; protocol: string }[]>();
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
   for (const n of nodes) outgoing.set(n.id, []);
   for (const e of edges) {
@@ -59,7 +56,8 @@ function reachableFrom(
   visited.add(start);
   const queue = [start];
   while (queue.length > 0) {
-    const id = queue.shift()!;
+    const id = queue.shift();
+    if (id === undefined) break;
     for (const edge of adj.outgoing.get(id) ?? []) {
       if (edge.targetId === blocked || visited.has(edge.targetId)) continue;
       visited.add(edge.targetId);
@@ -73,7 +71,8 @@ function syncReachable(adj: Adjacency, start: string): Set<string> {
   const visited = new Set<string>([start]);
   const queue = [start];
   while (queue.length > 0) {
-    const id = queue.shift()!;
+    const id = queue.shift();
+    if (id === undefined) break;
     for (const edge of adj.outgoing.get(id) ?? []) {
       if (ASYNC_PROTOCOLS.has(edge.protocol)) continue;
       if (visited.has(edge.targetId)) continue;
@@ -120,7 +119,7 @@ export function computeTopologyWarnings(
   for (const id of sync) {
     const n = nodeById.get(id);
     if (!n) continue;
-    const t = (n.data).definition.type;
+    const t = n.data.definition.type;
     if (
       t === "app-server" ||
       t === "websocket-server" ||
@@ -139,7 +138,7 @@ export function computeTopologyWarnings(
       if (data.isStartBlock) continue;
       // Managed/HA blocks (DNS, CDN, LB, …) are not SPOFs even at 1 instance.
       if ((data.definition.scaling ?? "counter") === "managed") continue;
-      const replicas = data.replicas ?? 1;
+      const replicas = data.replicas;
       if (replicas >= 2) continue;
       const without = reachableFrom(adj, start, id);
       const stillServed = servedSinks.some(
@@ -163,8 +162,7 @@ export function computeTopologyWarnings(
     const data = n.data;
     if (data.definition.type !== "app-server") continue;
     const out = adj.outgoing.get(n.id) ?? [];
-    const targetType = (id: string) =>
-      nodeById.get(id)?.data?.definition.type;
+    const targetType = (id: string) => nodeById.get(id)?.data.definition.type;
     const hasDb = out.some((e) => {
       const t = targetType(e.targetId);
       return t === "sql-db" || t === "nosql-db";

@@ -118,11 +118,7 @@ export function Workspace() {
 
   const handleIsValidConnection = useCallback(
     (connection: Edge | Connection) => {
-      return isValidConnection(
-        connection as Connection,
-        nodes,
-        edges,
-      );
+      return isValidConnection(connection as Connection, nodes, edges);
     },
     [nodes, edges],
   );
@@ -158,7 +154,8 @@ export function Workspace() {
           {/* Collapsed state: just a button strip */}
           {isAuto && !sidebarHovered && (
             <div className="flex h-full flex-col items-center gap-2 pt-2">
-              <button type="button"
+              <button
+                type="button"
                 onClick={() => setSidebarMode("fixed")}
                 className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-md p-1.5 transition-colors"
                 title="Pin sidebar"
@@ -173,7 +170,8 @@ export function Workspace() {
             <>
               {/* Sidebar header with mode toggle */}
               <div className="flex items-center justify-end border-b px-2 py-1">
-                <button type="button"
+                <button
+                  type="button"
                   onClick={() => setSidebarMode(isAuto ? "fixed" : "auto")}
                   className={cn(
                     "text-muted-foreground hover:text-foreground hover:bg-muted flex items-center gap-1 rounded-md px-1.5 py-1 text-[11px] transition-colors",
@@ -213,7 +211,7 @@ export function Workspace() {
                   <BlockPalette />
                 </TabsContent>
                 <TabsContent value="history" className="mt-0 min-h-0 flex-1">
-                  {level && <SubmissionHistory levelSlug={level.slug} />}
+                  <SubmissionHistory levelSlug={level.slug} />
                 </TabsContent>
               </Tabs>
             </>

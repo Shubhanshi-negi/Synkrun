@@ -72,12 +72,13 @@ export function SubmissionHeatmap({ username }: { username: string }) {
       for (let day = 0; day < 7; day++) {
         const d = new Date(startDate);
         d.setDate(d.getDate() + week * 7 + day);
-        const dateStr = d.toISOString().split("T")[0]!;
+        const dateStr = d.toISOString().slice(0, 10);
         const count = countMap.get(dateStr) ?? 0;
         days.push({ date: dateStr, count });
 
         if (d.getMonth() !== lastMonth && d.getFullYear() === year) {
-          months.push({ label: MONTHS[d.getMonth()]!, col: week });
+          const label = MONTHS[d.getMonth()];
+          if (label) months.push({ label, col: week });
           lastMonth = d.getMonth();
         }
       }
@@ -95,7 +96,8 @@ export function SubmissionHeatmap({ username }: { username: string }) {
         </h3>
         <div className="flex gap-1">
           {[currentYear - 1, currentYear].map((y) => (
-            <button type="button"
+            <button
+              type="button"
               key={y}
               onClick={() => setYear(y)}
               className={cn(

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import type { Monaco } from "@monaco-editor/react";
 import type * as Y from "yjs";
+import { useEffect } from "react";
 
-import { getFileText, getFilesMap } from "@acme/ducklet-fs";
+import { getFilesMap, getFileText } from "@acme/ducklet-fs";
 
 type TsNamespace = Monaco["languages"]["typescript"];
 type CompilerOptions = Parameters<

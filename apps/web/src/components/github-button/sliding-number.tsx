@@ -2,7 +2,13 @@
 
 import type { MotionValue, SpringOptions } from "motion/react";
 import * as React from "react";
-import { LazyMotion, domAnimation, m, useSpring, useTransform } from "motion/react";
+import {
+  domAnimation,
+  LazyMotion,
+  m,
+  useSpring,
+  useTransform,
+} from "motion/react";
 
 import { cn } from "~/lib/utils";
 
@@ -100,16 +106,23 @@ function SlidingNumber({
   },
   ...props
 }: SlidingNumberProps) {
-  const prevNumberRef = React.useRef<number>(0);
-
   const effectiveNumber = React.useMemo(
     () => Math.abs(Number(number)),
     [number],
   );
+  const [numberHistory, setNumberHistory] = React.useState({
+    current: 0,
+    previous: 0,
+  });
+  if (!Object.is(numberHistory.current, effectiveNumber)) {
+    setNumberHistory({
+      current: effectiveNumber,
+      previous: numberHistory.current,
+    });
+  }
 
   const formatNumber = React.useCallback(
-    (num: number) =>
-      decimalPlaces != null ? num.toFixed(decimalPlaces) : num.toString(),
+    (num: number) => num.toFixed(decimalPlaces),
     [decimalPlaces],
   );
 
@@ -118,7 +131,7 @@ function SlidingNumber({
   const newIntStr =
     padStart && newIntStrRaw?.length === 1 ? "0" + newIntStrRaw : newIntStrRaw;
 
-  const prevFormatted = formatNumber(prevNumberRef.current);
+  const prevFormatted = formatNumber(numberHistory.previous);
   const [prevIntStrRaw = "", prevDecStrRaw = ""] = prevFormatted.split(".");
   const prevIntStr =
     padStart && prevIntStrRaw.length === 1
@@ -137,10 +150,6 @@ function SlidingNumber({
       ? prevDecStrRaw.slice(0, newDecStrRaw.length)
       : prevDecStrRaw.padEnd(newDecStrRaw.length, "0");
   }, [prevDecStrRaw, newDecStrRaw]);
-
-  React.useEffect(() => {
-    prevNumberRef.current = effectiveNumber;
-  }, [effectiveNumber]);
 
   const intDigitCount = newIntStr?.length ?? 0;
   const intPlaces = React.useMemo(

@@ -32,12 +32,7 @@ function reply(_id: string, _text: string) {
   <main style="font-family: sans-serif; padding: 1rem">
     <h1>Nested Comments</h1>
     <ul>
-      <CommentNode
-        v-for="c in tree"
-        :key="c.id"
-        :node="c"
-        :on-reply="reply"
-      />
+      <CommentNode v-for="c in tree" :key="c.id" :node="c" :on-reply="reply" />
     </ul>
   </main>
 </template>

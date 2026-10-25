@@ -1,4 +1,4 @@
-import { roomKindEnum } from "./schema/enums";
+import type { roomKindEnum } from "./schema/enums";
 
 /** The kind discriminator on a room (a collaborative coding room). */
 export type RoomKind = (typeof roomKindEnum.enumValues)[number];

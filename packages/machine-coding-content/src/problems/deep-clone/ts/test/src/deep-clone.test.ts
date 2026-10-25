@@ -51,7 +51,10 @@ cases("deepClone", [
       const original: Node = { name: "x" };
       original.self = original;
       const clone = deepClone(original);
-      return { selfReferential: clone.self === clone, isCopy: clone !== original };
+      return {
+        selfReferential: clone.self === clone,
+        isCopy: clone !== original,
+      };
     },
   },
 ]);

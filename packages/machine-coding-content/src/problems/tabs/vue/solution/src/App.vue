@@ -8,7 +8,9 @@ const TABS = [
 ];
 
 const active = ref(TABS[0].id);
-const current = computed(() => TABS.find((t) => t.id === active.value) ?? TABS[0]);
+const current = computed(
+  () => TABS.find((t) => t.id === active.value) ?? TABS[0],
+);
 </script>
 
 <template>
@@ -25,7 +27,8 @@ const current = computed(() => TABS.find((t) => t.id === active.value) ?? TABS[0
         :style="{
           padding: '6px 12px',
           border: '1px solid #ccc',
-          borderBottom: t.id === active ? '2px solid #3178c6' : '1px solid #ccc',
+          borderBottom:
+            t.id === active ? '2px solid #3178c6' : '1px solid #ccc',
           background: t.id === active ? '#eef4fb' : '#fff',
           cursor: 'pointer',
         }"

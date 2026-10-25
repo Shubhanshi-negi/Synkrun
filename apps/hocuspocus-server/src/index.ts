@@ -4,7 +4,7 @@ import { applyUpdate, encodeStateAsUpdate } from "yjs";
 
 import type { CollabTokenPayload } from "@acme/auth/collab-token";
 import { verifyCollabToken } from "@acme/auth/collab-token";
-import { and, db, room, roomMember, eq, sql } from "@acme/db";
+import { and, db, eq, room, roomMember, sql } from "@acme/db";
 
 import { env } from "./env.js";
 
@@ -32,8 +32,9 @@ function originAllowed(origin: string | undefined): boolean {
 const server = Server.configure({
   port: env.PORT,
 
-  onListen: async (data) => {
+  onListen: (data) => {
     console.log(`Hocuspocus server running on port ${data.port}`);
+    return Promise.resolve();
   },
 
   onAuthenticate: async ({
@@ -55,7 +56,7 @@ const server = Server.configure({
     }
 
     const payload = verifyCollabToken(
-      token ?? "",
+      token,
       process.env.BETTER_AUTH_SECRET ?? "",
     );
     if (!payload) {
@@ -147,26 +148,27 @@ const server = Server.configure({
   // The client can still set color / cursor / photoURL freely, but the
   // server overwrites id and name with the values from the verified token
   // so a peer cannot impersonate someone else in the presence list.
-  onAwarenessUpdate: async ({ awareness, updated, context }) => {
+  onAwarenessUpdate: ({ awareness, updated, context }) => {
     const ctx = context as CollabContext | undefined;
-    if (!ctx?.user) return;
+    if (!ctx?.user) return Promise.resolve();
 
     for (const clientId of updated) {
-      const state = awareness.getStates().get(clientId);
-      if (!state?.user) continue;
+      const state: unknown = awareness.getStates().get(clientId);
+      if (!isRecord(state) || !isRecord(state.user)) continue;
 
-      const u = state.user as { id?: unknown; name?: unknown };
-      if (u.id !== ctx.user.id || u.name !== ctx.user.username) {
+      const user = state.user;
+      if (user.id !== ctx.user.id || user.name !== ctx.user.username) {
         awareness.states.set(clientId, {
           ...state,
           user: {
-            ...state.user,
+            ...user,
             id: ctx.user.id,
             name: ctx.user.username,
           },
         });
       }
     }
+    return Promise.resolve();
   },
 
   // Store document to PostgreSQL
@@ -210,7 +212,7 @@ const server = Server.configure({
   },
 });
 
-server.listen();
+await server.listen();
 
 const startedAt = Date.now();
 const healthPort = env.PORT + 1;
@@ -234,6 +236,10 @@ const healthServer = createServer((req, res) => {
 healthServer.listen(healthPort, () => {
   console.log(`Healthcheck listening on port ${healthPort}`);
 });
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 const shutdown = async (signal: string) => {
   console.log(`Received ${signal}, shutting down gracefully...`);

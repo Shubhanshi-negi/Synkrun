@@ -42,9 +42,9 @@ export function Navbar() {
   // are full-screen apps that render their own header. Suppress the global nav
   // so they don't double up.
   if (
-    /^\/ducklets\/[^/]+/.test(pathname ?? "") ||
-    /^\/interview\/[^/]+/.test(pathname ?? "") ||
-    /^\/machine-coding\/[^/]+/.test(pathname ?? "")
+    /^\/ducklets\/[^/]+/.test(pathname) ||
+    /^\/interview\/[^/]+/.test(pathname) ||
+    /^\/machine-coding\/[^/]+/.test(pathname)
   ) {
     return null;
   }
@@ -81,7 +81,7 @@ export function Navbar() {
               href={link.href}
               className={cn(
                 "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-                pathname?.startsWith(link.href)
+                pathname.startsWith(link.href)
                   ? "bg-primary/10 text-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-primary/5",
               )}
@@ -105,13 +105,13 @@ export function Navbar() {
                   >
                     <Image
                       src={getAvatarUrl(user.username, 32)}
-                      alt={user.name ?? "User"}
+                      alt={user.name}
                       width={32}
                       height={32}
                       className="bg-muted size-8 shrink-0 rounded-full"
                     />
                     <span className="max-w-[12rem] truncate text-sm font-medium whitespace-nowrap">
-                      {user.name ?? "User"}
+                      {user.name}
                     </span>
                   </button>
                 </DropdownMenuTrigger>
@@ -190,7 +190,7 @@ export function Navbar() {
                 href={link.href}
                 className={cn(
                   "block rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-                  pathname?.startsWith(link.href)
+                  pathname.startsWith(link.href)
                     ? "bg-primary/10 text-foreground"
                     : "text-muted-foreground hover:text-foreground hover:bg-primary/5",
                 )}
@@ -205,13 +205,13 @@ export function Navbar() {
                   <div className="flex items-center gap-3 px-4 py-2">
                     <Image
                       src={getAvatarUrl(user.username, 32)}
-                      alt={user.name ?? "User"}
+                      alt={user.name}
                       width={32}
                       height={32}
                       className="bg-muted size-8 shrink-0 rounded-full"
                     />
                     <span className="truncate text-sm font-medium">
-                      {user.name ?? "User"}
+                      {user.name}
                     </span>
                   </div>
                   {user.username && (
@@ -228,7 +228,9 @@ export function Navbar() {
                     className="text-destructive hover:bg-destructive/10 w-full rounded-lg px-4 py-2 text-left text-sm font-medium transition-colors"
                     onClick={() => {
                       setIsMobileMenuOpen(false);
-                      handleLogout();
+                      void handleLogout().catch((error: unknown) => {
+                        console.error("Failed to sign out:", error);
+                      });
                     }}
                   >
                     Log out

@@ -1,12 +1,11 @@
 "use client";
 
-import React from "react";
+import type { Extension } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
 import { java } from "@codemirror/lang-java";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { vscodeDark } from "@uiw/codemirror-theme-vscode";
-import type { Extension } from "@uiw/react-codemirror";
 import CodeMirror from "@uiw/react-codemirror";
 
 interface CodeEditorProps {

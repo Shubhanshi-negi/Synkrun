@@ -85,12 +85,14 @@ export function initAuth<
           before: async (user) => {
             // Generate a unique username before user creation
             const baseName =
-              user.name?.toLowerCase().replace(/[^a-z0-9]/g, "") ||
-              user.email
-                .split("@")[0]
-                ?.toLowerCase()
-                .replace(/[^a-z0-9]/g, "") ||
-              "user";
+              [
+                user.name?.toLowerCase().replace(/[^a-z0-9]/g, ""),
+                (user.email.split("@")[0] ?? "")
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]/g, ""),
+              ].find(
+                (name): name is string => name !== undefined && name.length > 0,
+              ) ?? "user";
 
             // Truncate base to leave room for suffix
             const base = baseName.slice(0, 20);

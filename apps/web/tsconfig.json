@@ -3,6 +3,7 @@
   "compilerOptions": {
     "lib": ["ES2022", "dom", "dom.iterable"],
     "jsx": "preserve",
+    "allowImportingTsExtensions": true,
     "paths": {
       "~/*": ["./src/*"],
       "@/*": ["./src/*"]
@@ -14,5 +15,5 @@
     ]
   },
   "include": [".", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "src/lib/system-design/__tests__"]
+  "exclude": ["node_modules"]
 }

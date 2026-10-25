@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Copy,
   Eye,
@@ -63,7 +62,6 @@ const DIFFICULTY_COLORS = {
 
 export default function AdminProblemsPage() {
   const trpc = useTRPC();
-  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState<string | undefined>();
@@ -89,7 +87,7 @@ export default function AdminProblemsPage() {
   const updateMutation = useMutation(
     trpc.problem.update.mutationOptions({
       onSuccess: () => {
-        refetch();
+        void refetch();
         toast.success("Problem updated");
       },
       onError: (error) => {
@@ -101,7 +99,7 @@ export default function AdminProblemsPage() {
   const deleteMutation = useMutation(
     trpc.problem.delete.mutationOptions({
       onSuccess: () => {
-        refetch();
+        void refetch();
         toast.success("Problem deleted");
       },
       onError: (error) => {
@@ -113,7 +111,7 @@ export default function AdminProblemsPage() {
   const duplicateMutation = useMutation(
     trpc.problem.duplicate.mutationOptions({
       onSuccess: () => {
-        refetch();
+        void refetch();
         toast.success("Problem duplicated successfully");
       },
       onError: (error) => {
@@ -126,12 +124,12 @@ export default function AdminProblemsPage() {
     updateMutation.mutate({ id, isActive: !currentStatus });
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     deleteMutation.mutate({ id });
     setDeleteId(null);
   };
 
-  const handleDuplicate = async (id: number) => {
+  const handleDuplicate = (id: number) => {
     duplicateMutation.mutate({ id });
   };
 
@@ -223,7 +221,8 @@ export default function AdminProblemsPage() {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <button type="button"
+                      <button
+                        type="button"
                         onClick={() => openEditDialog(problem.id)}
                         className="text-left font-medium hover:underline"
                       >
@@ -264,14 +263,10 @@ export default function AdminProblemsPage() {
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={
-                        (problem as any).isActive !== false
-                          ? "default"
-                          : "secondary"
-                      }
+                      variant={problem.isActive ? "default" : "secondary"}
                       className="text-xs"
                     >
-                      {(problem as any).isActive !== false ? "Active" : "Draft"}
+                      {problem.isActive ? "Active" : "Draft"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -296,13 +291,10 @@ export default function AdminProblemsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
-                            handleToggleActive(
-                              problem.id,
-                              (problem as any).isActive !== false,
-                            )
+                            handleToggleActive(problem.id, problem.isActive)
                           }
                         >
-                          {(problem as any).isActive !== false ? (
+                          {problem.isActive ? (
                             <>
                               <EyeOff className="mr-2 size-4" />
                               Set as Draft

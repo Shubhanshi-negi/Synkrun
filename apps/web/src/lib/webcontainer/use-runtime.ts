@@ -187,7 +187,8 @@ export function useWebContainerRuntime({
   useEffect(() => {
     if (!enabled) return;
 
-    let cancelled = false;
+    const cancellation = { current: false };
+    const isCancelled = (): boolean => cancellation.current;
     // Last content we believe is on disk for each path — the loop-breaker.
     const fsShadow = new Map<string, string>();
     const filesMap = getFilesMap(ydoc);
@@ -232,11 +233,11 @@ export function useWebContainerRuntime({
       try {
         setStatus("booting");
         const container = await bootWebContainer();
-        if (cancelled) return;
+        if (isCancelled()) return;
         setWebContainer(container);
 
         unsubServerReady = container.on("server-ready", (_port, url) => {
-          if (cancelled) return;
+          if (isCancelled()) return;
           previewUrlRef.current = url;
           try {
             previewOriginRef.current = new URL(url).origin;
@@ -262,7 +263,7 @@ export function useWebContainerRuntime({
           ),
           container.mount(toFileSystemTree(initialFiles, dirs)),
         ]);
-        if (cancelled) return;
+        if (isCancelled()) return;
 
         // Seed the shadow so we never re-write the files we just mounted.
         for (const [path, content] of Object.entries(initialFiles)) {
@@ -274,14 +275,14 @@ export function useWebContainerRuntime({
           ydoc,
           filesMap,
           fsShadow,
-          cancelled,
+          cancellation,
         );
 
         // Interactive shell wired to xterm via the output fan-out.
         const shell = await container.spawn("jsh", {
           terminal: { cols: 80, rows: 24 },
         });
-        if (cancelled) {
+        if (isCancelled()) {
           shell.kill();
           return;
         }
@@ -290,7 +291,7 @@ export function useWebContainerRuntime({
         void shell.output.pipeTo(
           new WritableStream({
             write(data) {
-              if (!cancelled) emit(data);
+              if (!isCancelled()) emit(data);
             },
           }),
         );
@@ -311,12 +312,12 @@ export function useWebContainerRuntime({
             void install.output.pipeTo(
               new WritableStream({
                 write(data) {
-                  if (!cancelled) emit(data);
+                  if (!isCancelled()) emit(data);
                 },
               }),
             );
             await install.exit;
-            if (cancelled) return;
+            if (isCancelled()) return;
           }
           setStatus("starting");
           void inputWriterRef.current.write(`${plan.run}\n`);
@@ -325,7 +326,7 @@ export function useWebContainerRuntime({
           setStatus("ready");
         }
       } catch (err) {
-        if (cancelled) return;
+        if (isCancelled()) return;
         console.error("[ducklet] runtime failed:", err);
         setError(
           err instanceof Error ? err.message : "Runtime failed to start",
@@ -337,7 +338,7 @@ export function useWebContainerRuntime({
     void start();
 
     return () => {
-      cancelled = true;
+      cancellation.current = true;
       window.removeEventListener("message", onConsoleMessage);
       unsubServerReady?.();
       stopObserving?.();
@@ -351,7 +352,6 @@ export function useWebContainerRuntime({
       setWebContainer(null);
       void teardownWebContainer();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, ydoc]);
 
   return {
@@ -379,7 +379,7 @@ function wireSync(
   ydoc: Y.Doc,
   filesMap: Y.Map<Y.Text>,
   fsShadow: Map<string, string>,
-  cancelledRef: boolean,
+  cancellation: { current: boolean },
 ): () => void {
   // Yjs → fs, debounced per path so a burst of keystrokes is one write.
   const dirty = new Set<string>();
@@ -423,7 +423,7 @@ function wireSync(
         );
         continue;
       }
-      const content = text.toString();
+      const content = text.toJSON();
       if (fsShadow.get(path) === content) continue;
       fsShadow.set(path, content);
       enqueueFsWrite(path, () => writeToContainer(container, path, content));
@@ -466,7 +466,7 @@ function wireSync(
     ".",
     { recursive: true },
     (_event, filename) => {
-      if (cancelledRef) return;
+      if (cancellation.current) return;
       if (typeof filename !== "string" || isIgnoredPath(filename)) return;
       // While our own Yjs→fs write for this path is in flight the disk is
       // mid-transition: a read here can return the *previous* content (the
@@ -487,7 +487,7 @@ function wireSync(
           if (fsShadow.get(filename) === content) return;
           fsShadow.set(filename, content);
           const text = filesMap.get(filename);
-          if (!text || text.toString() !== content) {
+          if (!text || text.toJSON() !== content) {
             writeYjsFile(ydoc, filename, content);
           }
         })

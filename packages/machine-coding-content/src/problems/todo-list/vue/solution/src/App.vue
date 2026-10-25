@@ -37,7 +37,12 @@ function remove(id: string) {
       <li
         v-for="t in todos"
         :key="t.id"
-        style="display: flex; justify-content: space-between; gap: 8px; padding: 4px 0"
+        style="
+          display: flex;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 4px 0;
+        "
       >
         <span>{{ t.text }}</span>
         <button type="button" @click="remove(t.id)">Delete {{ t.text }}</button>

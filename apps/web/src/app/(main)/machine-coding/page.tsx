@@ -9,8 +9,8 @@ import type { RouterOutputs } from "@acme/api";
 
 import type { LocalAttemptStatus } from "~/lib/machine-coding/local-store";
 import { DIFFICULTY_TEXT_COLORS } from "~/components/difficulty-badge";
-import { VariantIcons } from "~/components/machine-coding/variant-icons";
 import { ProblemStatusIcon } from "~/components/machine-coding/problem-status-icon";
+import { VariantIcons } from "~/components/machine-coding/variant-icons";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import {

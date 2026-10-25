@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import type { HocuspocusProvider } from "@hocuspocus/provider";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export interface PresenceUser {
   id: string;

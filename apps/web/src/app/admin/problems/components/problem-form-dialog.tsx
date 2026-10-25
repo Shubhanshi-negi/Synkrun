@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
+import type { FunctionSignature } from "./function-signature-editor";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -39,14 +40,8 @@ import {
 import { Switch } from "~/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Textarea } from "~/components/ui/textarea";
-import { cn } from "~/lib/utils";
 import { useTRPC } from "~/trpc/react";
-import type {
-  FunctionSignature} from "./function-signature-editor";
-import {
-  FunctionSignatureEditor,
-  ParamType,
-} from "./function-signature-editor";
+import { FunctionSignatureEditor } from "./function-signature-editor";
 import { TestCasesTable } from "./test-cases-table";
 
 const problemFormSchema = z.object({
@@ -67,24 +62,56 @@ const problemFormSchema = z.object({
   memoryLimit: z.coerce.number().int().positive().optional(),
   displayOrder: z.coerce.number().default(0),
   isActive: z.boolean().default(true),
-  testCases: z
-    .array(
-      z.object({
-        // Legacy format
-        input: z.string().optional(),
-        output: z.string().optional(),
-        // New structured format
-        args: z.array(z.string()).optional(),
-        expected: z.string().optional(),
-        isPublic: z.boolean(),
-      }),
-    )
-    .default([]),
+  testCases: z.array(
+    z.object({
+      // Legacy format
+      input: z.string().optional(),
+      output: z.string().optional(),
+      // New structured format
+      args: z.array(z.string()).optional(),
+      expected: z.string().optional(),
+      isPublic: z.boolean(),
+    }),
+  ),
   starterCode: z.record(z.string(), z.string()).optional(),
-  functionSignature: z.any().optional(),
+  functionSignature: z
+    .object({
+      fnName: z.string(),
+      params: z.array(
+        z.object({
+          id: z.string().optional(),
+          name: z.string(),
+          type: z.enum([
+            "integer",
+            "string",
+            "boolean",
+            "float",
+            "integer[]",
+            "string[]",
+          ]),
+        }),
+      ),
+      returnType: z.enum([
+        "integer",
+        "string",
+        "boolean",
+        "float",
+        "integer[]",
+        "string[]",
+      ]),
+    })
+    .transform((signature) => ({
+      ...signature,
+      params: signature.params.map((param, index) => ({
+        ...param,
+        id: param.id ?? `parameter-${index + 1}`,
+      })),
+    }))
+    .optional(),
 });
 
-type ProblemFormData = z.infer<typeof problemFormSchema>;
+export type ProblemFormInput = z.input<typeof problemFormSchema>;
+export type ProblemFormData = z.output<typeof problemFormSchema>;
 
 const LANGUAGES = [
   { key: "py", label: "Python" },
@@ -150,11 +177,11 @@ const TYPE_MAP = {
 // Helper to generate starter code based on signature
 const generateStarterCode = (sig: FunctionSignature) => {
   const codes: Record<string, string> = {
-    py: `class Solution:\n    def ${sig.fnName}(self, ${sig.params.map((p) => `${p.name}: ${TYPE_MAP.py?.[p.type] || "Any"}`).join(", ")}) -> ${TYPE_MAP.py?.[sig.returnType] || "Any"}:\n        # Your code here\n        pass`,
-    js: `class Solution {\n    /**\n${sig.params.map((p) => `     * @param {${TYPE_MAP.js?.[p.type] || "any"}} ${p.name}`).join("\n")}\n     * @return {${TYPE_MAP.js?.[sig.returnType] || "any"}}\n     */\n    ${sig.fnName}(${sig.params.map((p) => p.name).join(", ")}) {\n        // Your code here\n    }\n}`,
-    java: `class Solution {\n    public ${TYPE_MAP.java?.[sig.returnType] || "void"} ${sig.fnName}(${sig.params.map((p) => `${TYPE_MAP.java?.[p.type] || "Object"} ${p.name}`).join(", ")}) {\n        // Your code here\n        return ${sig.returnType.includes("[]") && TYPE_MAP.java?.[sig.returnType] ? "new " + TYPE_MAP.java[sig.returnType].replace("[]", "[0]") : sig.returnType === "boolean" ? "false" : "0"};\n    }\n}`,
-    cpp: `class Solution {\npublic:\n    ${TYPE_MAP.cpp?.[sig.returnType] || "void"} ${sig.fnName}(${sig.params.map((p) => `${TYPE_MAP.cpp?.[p.type] || "auto"} ${p.name}`).join(", ")}) {\n        // Your code here\n    }\n};`,
-    c: `// C support is limited for classes, using struct or standalone function\n${TYPE_MAP.c?.[sig.returnType] || "void"} ${sig.fnName}(${sig.params.map((p) => `${TYPE_MAP.c?.[p.type] || "void*"} ${p.name}`).join(", ")}) {\n    // Your code here\n}`,
+    py: `class Solution:\n    def ${sig.fnName}(self, ${sig.params.map((p) => `${p.name}: ${TYPE_MAP.py[p.type]}`).join(", ")}) -> ${TYPE_MAP.py[sig.returnType]}:\n        # Your code here\n        pass`,
+    js: `class Solution {\n    /**\n${sig.params.map((p) => `     * @param {${TYPE_MAP.js[p.type]}} ${p.name}`).join("\n")}\n     * @return {${TYPE_MAP.js[sig.returnType]}}\n     */\n    ${sig.fnName}(${sig.params.map((p) => p.name).join(", ")}) {\n        // Your code here\n    }\n}`,
+    java: `class Solution {\n    public ${TYPE_MAP.java[sig.returnType]} ${sig.fnName}(${sig.params.map((p) => `${TYPE_MAP.java[p.type]} ${p.name}`).join(", ")}) {\n        // Your code here\n        return ${sig.returnType.includes("[]") ? "new " + TYPE_MAP.java[sig.returnType].replace("[]", "[0]") : sig.returnType === "boolean" ? "false" : "0"};\n    }\n}`,
+    cpp: `class Solution {\npublic:\n    ${TYPE_MAP.cpp[sig.returnType]} ${sig.fnName}(${sig.params.map((p) => `${TYPE_MAP.cpp[p.type]} ${p.name}`).join(", ")}) {\n        // Your code here\n    }\n};`,
+    c: `// C support is limited for classes, using struct or standalone function\n${TYPE_MAP.c[sig.returnType]} ${sig.fnName}(${sig.params.map((p) => `${TYPE_MAP.c[p.type]} ${p.name}`).join(", ")}) {\n    // Your code here\n}`,
   };
   return codes;
 };
@@ -175,9 +202,6 @@ export function ProblemFormDialog({
   const trpc = useTRPC();
   const [tagsInput, setTagsInput] = useState("");
   const [currentLang, setCurrentLang] = useState("py");
-  const [signature, setSignature] = useState<FunctionSignature | undefined>(
-    undefined,
-  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle file upload
@@ -188,8 +212,13 @@ export function ProblemFormDialog({
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const content = e.target?.result as string;
-        const problemData = JSON.parse(content);
+        const content = e.target?.result;
+        if (typeof content !== "string") {
+          throw new Error("Problem file did not contain text");
+        }
+        const problemData = problemFormSchema
+          .partial()
+          .parse(JSON.parse(content) as unknown);
 
         // Validate basic structure
         if (!problemData.title || !problemData.description) {
@@ -198,29 +227,27 @@ export function ProblemFormDialog({
         }
 
         // Populate form fields
-        form.setValue("title", problemData.title || "");
-        form.setValue("slug", problemData.slug || "");
-        form.setValue("description", problemData.description || "");
-        form.setValue("hints", problemData.hints || []);
-        form.setValue("constraints", problemData.constraints || "");
-        form.setValue("companies", problemData.companies || []);
-        form.setValue("followUp", problemData.followUp || "");
-        form.setValue("difficulty", problemData.difficulty || "easy");
-        form.setValue("tags", problemData.tags || []);
+        form.setValue("title", problemData.title ?? "");
+        form.setValue("slug", problemData.slug ?? "");
+        form.setValue("description", problemData.description ?? "");
+        form.setValue("hints", problemData.hints ?? []);
+        form.setValue("constraints", problemData.constraints ?? "");
+        form.setValue("companies", problemData.companies ?? []);
+        form.setValue("followUp", problemData.followUp ?? "");
+        form.setValue("difficulty", problemData.difficulty ?? "easy");
+        form.setValue("tags", problemData.tags ?? []);
         form.setValue("timeLimit", problemData.timeLimit ?? undefined);
         form.setValue("memoryLimit", problemData.memoryLimit ?? undefined);
-        form.setValue("displayOrder", problemData.displayOrder || 0);
+        form.setValue("displayOrder", problemData.displayOrder ?? 0);
         form.setValue("isActive", problemData.isActive ?? true);
 
         // Handle function signature
         if (problemData.functionSignature) {
-          const sig = problemData.functionSignature;
-          setSignature(sig);
-          handleSignatureChange(sig);
+          handleSignatureChange(problemData.functionSignature);
         }
 
         // Handle test cases
-        if (problemData.testCases && Array.isArray(problemData.testCases)) {
+        if (problemData.testCases) {
           form.setValue("testCases", problemData.testCases);
         }
 
@@ -266,7 +293,8 @@ export function ProblemFormDialog({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${formData.slug || "problem"}.json`;
+    const slug = formData.slug.trim();
+    a.download = `${slug.length > 0 ? slug : "problem"}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -277,14 +305,13 @@ export function ProblemFormDialog({
 
   // Update starter code when signature changes
   const handleSignatureChange = (newSig: FunctionSignature) => {
-    setSignature(newSig);
     form.setValue("functionSignature", newSig);
 
     const newStarterCode = generateStarterCode(newSig);
     form.setValue("starterCode", newStarterCode);
   };
 
-  const form = useForm<ProblemFormData>({
+  const form = useForm<ProblemFormInput, unknown, ProblemFormData>({
     resolver: zodResolver(problemFormSchema),
     defaultValues: {
       title: "",
@@ -304,12 +331,22 @@ export function ProblemFormDialog({
       starterCode: DEFAULT_STARTER_CODE,
     },
   });
+  const formSignature = form.watch("functionSignature");
+  const signature: FunctionSignature | undefined = formSignature
+    ? {
+        ...formSignature,
+        params: formSignature.params.map((param, index) => ({
+          ...param,
+          id: param.id ?? `parameter-${index + 1}`,
+        })),
+      }
+    : undefined;
 
   // Fetch existing problem
   const { data: existingProblem, isLoading: isLoadingProblem } = useQuery(
     trpc.problem.adminById.queryOptions(
-      { id: problemId! },
-      { enabled: !!problemId && open },
+      { id: problemId ?? 0 },
+      { enabled: problemId !== null && open },
     ),
   );
 
@@ -319,30 +356,31 @@ export function ProblemFormDialog({
   // during render.
   useEffect(() => {
     if (open) {
-      if (problemId && existingProblem) {
+      if (problemId !== null && existingProblem) {
+        const functionSignature = existingProblem.functionSignature
+          ? problemFormSchema.shape.functionSignature.parse(
+              existingProblem.functionSignature,
+            )
+          : undefined;
         form.reset({
           title: existingProblem.title,
           slug: existingProblem.slug,
           description: existingProblem.description,
-          hints: existingProblem.hints ?? [],
+          hints: existingProblem.hints,
           constraints: existingProblem.constraints ?? "",
-          companies: existingProblem.companies ?? [],
+          companies: existingProblem.companies,
           followUp: existingProblem.followUp ?? "",
           difficulty: existingProblem.difficulty,
           tags: existingProblem.tags,
           timeLimit: existingProblem.timeLimit ?? undefined,
           memoryLimit: existingProblem.memoryLimit ?? undefined,
-          displayOrder: existingProblem.displayOrder || 0,
+          displayOrder: existingProblem.displayOrder ?? 0,
           isActive: existingProblem.isActive,
-          testCases: existingProblem.testCases as any[],
-          starterCode: existingProblem.starterCode!,
-          functionSignature: existingProblem.functionSignature as any,
+          testCases: existingProblem.testCases,
+          starterCode: existingProblem.starterCode ?? DEFAULT_STARTER_CODE,
+          functionSignature,
         });
-        if (existingProblem.functionSignature) {
-          // signature is editable by user and loaded from async query data — not a simple derived value
-          setSignature(existingProblem.functionSignature as any);
-        }
-      } else if (!problemId) {
+      } else if (problemId === null) {
         form.reset({
           title: "",
           slug: "",
@@ -360,7 +398,6 @@ export function ProblemFormDialog({
           testCases: [{ input: "", output: "", isPublic: true }],
           starterCode: DEFAULT_STARTER_CODE,
         });
-        setSignature(undefined);
       }
     }
   }, [open, problemId, existingProblem, form]);
@@ -404,18 +441,18 @@ export function ProblemFormDialog({
     }
   };
 
-  const tags = form.watch("tags");
+  const tags = form.watch("tags") ?? [];
   const addTag = (tag: string) => {
     const trimmed = tag.trim().toLowerCase();
     if (trimmed && !tags.includes(trimmed)) {
-      const currentTags = form.getValues("tags");
+      const currentTags = form.getValues("tags") ?? [];
       form.setValue("tags", [...currentTags, trimmed]);
     }
     setTagsInput("");
   };
 
   const removeTag = (tagToRemove: string) => {
-    const currentTags = form.getValues("tags");
+    const currentTags = form.getValues("tags") ?? [];
     form.setValue(
       "tags",
       currentTags.filter((t) => t !== tagToRemove),
@@ -505,12 +542,17 @@ export function ProblemFormDialog({
                       Please fix the following errors:
                       <ul className="mt-2 list-inside list-disc space-y-1">
                         {Object.entries(form.formState.errors).map(
-                          ([key, error]) => (
-                            <li key={key} className="text-sm">
-                              {key}:{" "}
-                              {error?.message?.toString() || "Invalid value"}
-                            </li>
-                          ),
+                          ([key, error]) => {
+                            const message =
+                              typeof error.message === "string"
+                                ? error.message
+                                : "Invalid value";
+                            return (
+                              <li key={key} className="text-sm">
+                                {key}: {message}
+                              </li>
+                            );
+                          },
                         )}
                       </ul>
                     </AlertDescription>
@@ -600,7 +642,15 @@ export function ProblemFormDialog({
                               <FormItem>
                                 <FormLabel>Display Order</FormLabel>
                                 <FormControl>
-                                  <Input type="number" {...field} />
+                                  <Input
+                                    type="number"
+                                    {...field}
+                                    value={
+                                      typeof field.value === "number"
+                                        ? field.value
+                                        : ""
+                                    }
+                                  />
                                 </FormControl>
                                 <FormDescription>
                                   Lower numbers appear first
@@ -621,7 +671,11 @@ export function ProblemFormDialog({
                                     type="number"
                                     placeholder="Judge default"
                                     {...field}
-                                    value={field.value ?? ""}
+                                    value={
+                                      typeof field.value === "number"
+                                        ? field.value
+                                        : ""
+                                    }
                                   />
                                 </FormControl>
                                 <FormDescription>
@@ -643,7 +697,11 @@ export function ProblemFormDialog({
                                     type="number"
                                     placeholder="Judge default"
                                     {...field}
-                                    value={field.value ?? ""}
+                                    value={
+                                      typeof field.value === "number"
+                                        ? field.value
+                                        : ""
+                                    }
                                   />
                                 </FormControl>
                                 <FormDescription>
@@ -805,7 +863,11 @@ export function ProblemFormDialog({
                                   <FormItem>
                                     <FormControl>
                                       <CodeEditor
-                                        value={field.value || ""}
+                                        value={
+                                          typeof field.value === "string"
+                                            ? field.value
+                                            : ""
+                                        }
                                         onChange={field.onChange}
                                         language={lang.key}
                                         height="400px"

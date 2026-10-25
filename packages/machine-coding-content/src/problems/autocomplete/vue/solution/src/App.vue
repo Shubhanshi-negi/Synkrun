@@ -41,7 +41,12 @@ function pick(value: string) {
     <ul
       v-if="open && query"
       role="listbox"
-      style="list-style: none; padding: 0; margin: 4px 0; border: 1px solid #ddd"
+      style="
+        list-style: none;
+        padding: 0;
+        margin: 4px 0;
+        border: 1px solid #ddd;
+      "
     >
       <li v-if="matches.length === 0" style="padding: 4px 8px; color: #888">
         No results
@@ -52,7 +57,14 @@ function pick(value: string) {
           role="option"
           :aria-selected="false"
           @click="pick(m)"
-          style="width: 100%; text-align: left; padding: 4px 8px; border: none; background: none; cursor: pointer"
+          style="
+            width: 100%;
+            text-align: left;
+            padding: 4px 8px;
+            border: none;
+            background: none;
+            cursor: pointer;
+          "
         >
           {{ m }}
         </button>

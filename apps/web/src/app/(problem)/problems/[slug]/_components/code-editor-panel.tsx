@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 import type { Language } from "~/components/code-editor";
 import { CodeEditor } from "~/components/code-editor";
+import { EditorSettingsDialog } from "~/components/editor-settings-dialog";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -23,7 +24,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { EditorSettingsDialog } from "~/components/editor-settings-dialog";
 import { useConfirm } from "~/hooks/use-confirm";
 import { useEditorSettings } from "~/hooks/use-editor-settings";
 import { LANGUAGES } from "~/lib/languages";
@@ -96,7 +96,7 @@ export function CodeEditorPanel({
 
     const { doc } = view.state;
     const changes = indentRange(view.state, 0, doc.length);
-    if (changes) {
+    if (!changes.empty) {
       view.dispatch({ changes });
       toast.success("Code re-indented");
     }

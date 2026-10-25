@@ -13,10 +13,10 @@ export function isValidConnection(
   const targetNode = nodes.find((n) => n.id === connection.target);
   if (!sourceNode || !targetNode) return false;
 
-  const sourcePort = (sourceNode.data).definition.ports.find(
+  const sourcePort = sourceNode.data.definition.ports.find(
     (p) => p.id === connection.sourceHandle,
   );
-  const targetPort = (targetNode.data).definition.ports.find(
+  const targetPort = targetNode.data.definition.ports.find(
     (p) => p.id === connection.targetHandle,
   );
   if (!sourcePort || !targetPort) return false;
@@ -59,7 +59,8 @@ export function hasCycle(nodes: Node[], edges: Edge[]): boolean {
 
   let visited = 0;
   while (queue.length > 0) {
-    const current = queue.shift()!;
+    const current = queue.shift();
+    if (current === undefined) break;
     visited++;
     for (const neighbor of adjacency.get(current) ?? []) {
       const newDegree = (inDegree.get(neighbor) ?? 1) - 1;
@@ -92,7 +93,8 @@ export function getTopologicalOrder(nodes: Node[], edges: Edge[]): string[] {
 
   const order: string[] = [];
   while (queue.length > 0) {
-    const current = queue.shift()!;
+    const current = queue.shift();
+    if (current === undefined) break;
     order.push(current);
     for (const neighbor of adjacency.get(current) ?? []) {
       const newDegree = (inDegree.get(neighbor) ?? 1) - 1;
@@ -123,7 +125,8 @@ export function getReachableTypes(
   visited.add(startId);
 
   while (queue.length > 0) {
-    const current = queue.shift()!;
+    const current = queue.shift();
+    if (current === undefined) break;
     for (const neighbor of adjacency.get(current) ?? []) {
       if (visited.has(neighbor)) continue;
       visited.add(neighbor);
@@ -134,7 +137,7 @@ export function getReachableTypes(
   const types = new Set<string>();
   for (const node of nodes) {
     if (visited.has(node.id)) {
-      types.add((node.data).definition.type);
+      types.add(node.data.definition.type);
     }
   }
   return types;

@@ -44,7 +44,6 @@ const CATEGORY_PILLS = [
  */
 export function ProblemSheet({
   currentSlug,
-  title,
 }: {
   currentSlug: string;
   title: string;

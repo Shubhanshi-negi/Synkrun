@@ -18,7 +18,12 @@ export default function App() {
       <img
         src={slide.src}
         alt={slide.alt}
-        style={{ width: "100%", height: 180, objectFit: "cover", background: "#eee" }}
+        style={{
+          width: "100%",
+          height: 180,
+          objectFit: "cover",
+          background: "#eee",
+        }}
       />
       <div
         style={{
@@ -28,7 +33,11 @@ export default function App() {
           marginTop: 8,
         }}
       >
-        <button type="button" aria-label="Previous slide" onClick={() => go(-1)}>
+        <button
+          type="button"
+          aria-label="Previous slide"
+          onClick={() => go(-1)}
+        >
           ‹ Prev
         </button>
         <span role="status">{"Slide " + (index + 1) + " of " + count}</span>

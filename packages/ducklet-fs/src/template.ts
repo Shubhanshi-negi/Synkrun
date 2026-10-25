@@ -4,7 +4,7 @@
  * create flow. Each template is a self-contained project that boots in the
  * WebContainer via its `startCommand`.
  */
-import * as Y from "yjs";
+import type * as Y from "yjs";
 
 import { getFilesMap, writeFile } from "./model";
 

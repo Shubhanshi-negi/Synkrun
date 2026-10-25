@@ -18,14 +18,25 @@ onUnmounted(() => document.removeEventListener("keydown", onKey));
       v-if="open"
       data-testid="backdrop"
       @click="open = false"
-      style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); display: grid; place-items: center"
+      style="
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: grid;
+        place-items: center;
+      "
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Confirm"
         @click.stop
-        style="background: #fff; padding: 1.5rem; border-radius: 8px; min-width: 240px"
+        style="
+          background: #fff;
+          padding: 1.5rem;
+          border-radius: 8px;
+          min-width: 240px;
+        "
       >
         <p>Are you sure?</p>
         <button type="button" @click="open = false">Close</button>

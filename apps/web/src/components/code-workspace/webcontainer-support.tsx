@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { MonitorSmartphone } from "lucide-react";
 
 import type { SupportResult } from "~/lib/webcontainer/support";
@@ -57,7 +57,7 @@ export function useWebContainerSupport(): SupportResult & { checked: boolean } {
 
     // Isolated, or recovery spent: clear so a later soft-nav can retry once.
     writeGuard(false);
-    setResult({ ...support, checked: true });
+    startTransition(() => setResult({ ...support, checked: true }));
   }, []);
 
   return result;

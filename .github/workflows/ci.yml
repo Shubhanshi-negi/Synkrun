@@ -47,3 +47,42 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      - name: Test
+        run: pnpm -F @acme/nextjs test:calibration
+
+  build:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_URL: postgres://build:build@localhost:5432/build
+      BETTER_AUTH_SECRET: ci-build-placeholder
+      BETTER_AUTH_GITHUB_ID: ci-build-placeholder
+      BETTER_AUTH_GITHUB_SECRET: ci-build-placeholder
+      BETTER_AUTH_GOOGLE_ID: ci-build-placeholder
+      BETTER_AUTH_GOOGLE_SECRET: ci-build-placeholder
+      BASE_URL: https://synkrun.example
+      PRODUCTION_URL: https://synkrun.example
+      NEXT_PUBLIC_BASE_URL: https://synkrun.example
+      NEXT_PUBLIC_SOCKET_URL: wss://collaboration.synkrun.example
+      JUDGE_API_TOKEN: ci-build-placeholder
+      R2_BUCKET: ci-build-placeholder
+      R2_ACCOUNT_ID: ci-build-placeholder
+      R2_ACCESS_KEY_ID: ci-build-placeholder
+      R2_SECRET_ACCESS_KEY: ci-build-placeholder
+      R2_ENDPOINT: https://ci-build-placeholder.r2.cloudflarestorage.com
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup
+        uses: ./tooling/github/setup
+
+      - name: Build
+        run: pnpm build

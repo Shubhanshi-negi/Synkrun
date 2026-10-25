@@ -57,9 +57,8 @@ export default function SystemDesignPage() {
   const [historySlug, setHistorySlug] = useState<string | null>(null);
   const [view, setView] = useState<"grid" | "table">(() => {
     try {
-      return (
-        (localStorage.getItem("sd-levels-view") as "grid" | "table") ?? "grid"
-      );
+      const storedView = localStorage.getItem("sd-levels-view");
+      return storedView === "table" ? "table" : "grid";
     } catch {
       return "grid";
     }
@@ -69,7 +68,9 @@ export default function SystemDesignPage() {
     setView(v);
     try {
       localStorage.setItem("sd-levels-view", v);
-    } catch {}
+    } catch (error) {
+      console.error("Failed to save system design view preference:", error);
+    }
   };
 
   const { data: progress } = useQuery(
@@ -108,7 +109,8 @@ export default function SystemDesignPage() {
           {LEVELS.length} {LEVELS.length === 1 ? "Level" : "Levels"}
         </h2>
         <div className="bg-muted flex rounded-lg p-0.5">
-          <button type="button"
+          <button
+            type="button"
             onClick={() => handleViewChange("grid")}
             className={cn(
               "rounded-md p-1.5 transition-colors",
@@ -120,7 +122,8 @@ export default function SystemDesignPage() {
           >
             <LayoutGrid size={14} />
           </button>
-          <button type="button"
+          <button
+            type="button"
             onClick={() => handleViewChange("table")}
             className={cn(
               "rounded-md p-1.5 transition-colors",
@@ -271,7 +274,10 @@ export default function SystemDesignPage() {
                 <th className="text-muted-foreground hidden px-4 py-2.5 text-xs font-medium md:table-cell">
                   Best Latency
                 </th>
-                <th className="text-muted-foreground px-4 py-2.5 text-right text-xs font-medium" aria-label="Actions" />
+                <th
+                  className="text-muted-foreground px-4 py-2.5 text-right text-xs font-medium"
+                  aria-label="Actions"
+                />
               </tr>
             </thead>
             <tbody>
@@ -564,7 +570,7 @@ function reconstructGraph(graph: SavedGraph): {
         definition,
         instanceId: saved.id,
         isStartBlock:
-          saved.data.isStartBlock ||
+          saved.data.isStartBlock === true ||
           saved.data.definitionType === "traffic-source",
         replicas: saved.data.replicas ?? 1,
         currentRps: 0,
@@ -602,7 +608,7 @@ function AttemptHistoryDialog({
 
   const { data: attempts, isLoading } = useQuery(
     trpc.systemDesign.myAttempts.queryOptions(
-      { levelSlug: levelSlug! },
+      { levelSlug: levelSlug ?? "" },
       { enabled: !!levelSlug },
     ),
   );
@@ -694,7 +700,8 @@ function AttemptHistoryDialog({
                 </div>
 
                 {/* View graph button */}
-                <button type="button"
+                <button
+                  type="button"
                   onClick={() => setViewingGraph(a.graph as SavedGraph)}
                   className="text-muted-foreground hover:text-foreground shrink-0 transition-colors"
                   title="View design"

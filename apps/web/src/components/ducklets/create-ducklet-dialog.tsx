@@ -87,7 +87,8 @@ export function CreateDuckletDialog({
   const handleCreate = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const template = getTemplate(templateId) ?? getTemplate(DEFAULT_TEMPLATE_ID);
+    const template =
+      getTemplate(templateId) ?? getTemplate(DEFAULT_TEMPLATE_ID);
     if (!template) return;
 
     // Seed a fresh Y.Doc with the template's files, then ship the encoded

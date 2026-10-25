@@ -58,7 +58,12 @@ function cardsIn(col: number) {
           <li
             v-for="card in cardsIn(col)"
             :key="card.id"
-            style="background: #fff; padding: 6px; margin-top: 6px; border-radius: 6px"
+            style="
+              background: #fff;
+              padding: 6px;
+              margin-top: 6px;
+              border-radius: 6px;
+            "
           >
             <span>{{ card.text }}</span>
             <div style="margin-top: 4px; display: flex; gap: 4px">

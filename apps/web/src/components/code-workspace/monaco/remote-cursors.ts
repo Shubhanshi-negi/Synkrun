@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import type { HocuspocusProvider } from "@hocuspocus/provider";
+import { useEffect } from "react";
 
 /**
  * Render remote collaborator cursors/selections for the y-monaco binding.
@@ -60,7 +60,8 @@ export function useRemoteCursorStyles(
 }
 
 /** Only allow simple colour tokens through into the stylesheet. */
-const SAFE_COLOR = /^(#[0-9a-fA-F]{3,8}|rgba?\([\d.,\s%]+\)|hsla?\([\d.,\s%]+\)|[a-zA-Z]+)$/;
+const SAFE_COLOR =
+  /^(#[0-9a-fA-F]{3,8}|rgba?\([\d.,\s%]+\)|hsla?\([\d.,\s%]+\)|[a-zA-Z]+)$/;
 
 const STATIC_CSS = `
 .yRemoteSelection { border-radius: 2px; }

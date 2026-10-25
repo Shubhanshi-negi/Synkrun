@@ -62,7 +62,7 @@ export function DiscussionPanel({
 }: DiscussionPanelProps) {
   const trpc = useTRPC();
   const { data: session } = authClient.useSession();
-  const currentUserId = session?.user?.id;
+  const currentUserId = session?.user.id;
 
   const { commentsQuery } = useDiscussion(problem.id);
 
@@ -126,7 +126,8 @@ export function DiscussionPanel({
     const c = openPost;
     return (
       <div className="custom-scrollbar h-full overflow-y-auto p-6 pb-32">
-        <button type="button"
+        <button
+          type="button"
           onClick={() => setOpenId(null)}
           className="text-muted-foreground hover:text-foreground mb-5 flex items-center gap-1.5 text-xs font-medium transition-colors"
         >
@@ -286,7 +287,7 @@ export function DiscussionPanel({
                   placeholder="Share your approach or ask a question…"
                   minHeightClass="min-h-48"
                   footer={
-                    attach && canShare && best ? (
+                    attach && canShare ? (
                       <>
                         <div className="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-wide uppercase">
                           Attached {getLanguageLabel(best.lang)} solution
@@ -305,8 +306,7 @@ export function DiscussionPanel({
                         onChange={(e) => setAttach(e.target.checked)}
                         className="accent-primary size-3"
                       />
-                      Attach my accepted{" "}
-                      {best ? getLanguageLabel(best.lang) : ""} solution
+                      Attach my accepted {getLanguageLabel(best.lang)} solution
                     </label>
                   ) : (
                     <span className="text-muted-foreground/60 text-[11px]">
@@ -403,7 +403,8 @@ function ListRow({
 }) {
   return (
     <li>
-      <button type="button"
+      <button
+        type="button"
         onClick={onOpen}
         className="flex w-full items-start gap-3 py-4 text-left transition-colors hover:bg-white/[0.02]"
       >

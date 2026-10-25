@@ -52,7 +52,9 @@ cases("Kanban Board", [
       const user = userEvent.setup();
       render(App);
       await addCard(user, "To Do", "Ship it");
-      await user.click(screen.getByRole("button", { name: "Move Ship it right" }));
+      await user.click(
+        screen.getByRole("button", { name: "Move Ship it right" }),
+      );
       return { todo: cardsIn("To Do"), inProgress: cardsIn("In Progress") };
     },
   },
@@ -78,8 +80,12 @@ cases("Kanban Board", [
       const user = userEvent.setup();
       render(App);
       await addCard(user, "To Do", "Deploy");
-      await user.click(screen.getByRole("button", { name: "Move Deploy right" }));
-      await user.click(screen.getByRole("button", { name: "Move Deploy right" }));
+      await user.click(
+        screen.getByRole("button", { name: "Move Deploy right" }),
+      );
+      await user.click(
+        screen.getByRole("button", { name: "Move Deploy right" }),
+      );
       const right = screen.getByRole("button", {
         name: "Move Deploy right",
       }) as HTMLButtonElement;

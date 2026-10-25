@@ -4,7 +4,6 @@ import { useState } from "react";
 import { EyeOff, Pencil, Play, X } from "lucide-react";
 
 import type { ConsoleResult, ProblemDetail } from "../types";
-import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { cn } from "~/lib/utils";
 
@@ -38,7 +37,7 @@ export function TestCasePanel({
 }: TestCasePanelProps) {
   const [isEditingCustom, setIsEditingCustom] = useState(false);
   const sig = problem.functionSignature;
-  const publicCases = problem.testCases?.filter((tc) => tc.isPublic) ?? [];
+  const publicCases = problem.testCases.filter((tc) => tc.isPublic);
 
   const startCustomEdit = () => {
     const tc = publicCases[selectedTestCase] ?? publicCases[0];
@@ -103,7 +102,8 @@ export function TestCasePanel({
             <div className="p-4">
               <div className="mb-4 flex items-center gap-2">
                 {publicCases.map((tc, i) => (
-                  <button type="button"
+                  <button
+                    type="button"
                     key={tc.input ?? tc.expected ?? i}
                     onClick={() => {
                       onSelectTestCase(i);
@@ -120,7 +120,8 @@ export function TestCasePanel({
                   </button>
                 ))}
                 {isEditingCustom ? (
-                  <button type="button"
+                  <button
+                    type="button"
                     onClick={clearCustom}
                     className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded-lg px-3 py-1 text-xs font-medium transition-colors"
                   >
@@ -128,7 +129,8 @@ export function TestCasePanel({
                     Custom
                   </button>
                 ) : (
-                  <button type="button"
+                  <button
+                    type="button"
                     onClick={startCustomEdit}
                     className="bg-accent text-foreground flex items-center gap-1 rounded-lg border border-dashed border-white/10 px-3 py-1 text-xs font-medium transition-colors hover:border-white/20"
                   >
@@ -244,7 +246,8 @@ export function TestCasePanel({
                   <div className="mb-4 flex items-center gap-2">
                     {/* consoleOutput items are positionally bound to test cases and never reorder */}
                     {consoleOutput.map((r, i) => (
-                      <button type="button"
+                      <button
+                        type="button"
                         key={i}
                         onClick={() => onSelectOutputCase(i)}
                         className={cn(
@@ -284,7 +287,7 @@ export function TestCasePanel({
                               {param.name} =
                             </div>
                             <div className="text-foreground bg-accent/40 rounded-lg px-3 py-2 font-mono text-sm">
-                              {tc?.args?.[j]}
+                              {tc.args?.[j]}
                             </div>
                           </div>
                         ))
@@ -307,7 +310,7 @@ export function TestCasePanel({
                               Output
                             </div>
                             <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2 font-mono text-sm text-rose-400">
-                              {res.actual || "null"}
+                              {res.actual ?? "null"}
                             </div>
                           </div>
                           <div>
@@ -315,7 +318,7 @@ export function TestCasePanel({
                               Expected
                             </div>
                             <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 font-mono text-sm text-emerald-400">
-                              {res.expected || tc?.expected || "N/A"}
+                              {res.expected ?? tc?.expected ?? "N/A"}
                             </div>
                           </div>
                         </div>
@@ -325,7 +328,7 @@ export function TestCasePanel({
                             Output
                           </div>
                           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 font-mono text-sm text-emerald-400">
-                            {res.actual || "null"}
+                            {res.actual ?? "null"}
                           </div>
                         </div>
                       )}

@@ -19,7 +19,12 @@ export default function App() {
       <img
         src={SLIDES[index].src}
         alt={SLIDES[index].alt}
-        style={{ width: "100%", height: 180, objectFit: "cover", background: "#eee" }}
+        style={{
+          width: "100%",
+          height: 180,
+          objectFit: "cover",
+          background: "#eee",
+        }}
       />
     </main>
   );

@@ -2,7 +2,7 @@
   "name": "codingducks",
   "private": true,
   "engines": {
-    "node": "^23",
+    "node": "^24",
     "pnpm": "^10.19.0"
   },
   "packageManager": "pnpm@10.19.0",
@@ -39,11 +39,5 @@
       "@eslint/core": "0.17.0"
     }
   },
-  "prettier": "@acme/prettier-config",
-  "dependencies": {
-    "@codemirror/lang-go": "^6.0.1",
-    "@codemirror/lang-php": "^6.0.2",
-    "@codemirror/lang-rust": "^6.0.2",
-    "@codemirror/legacy-modes": "^6.5.2"
-  }
+  "prettier": "@acme/prettier-config"
 }
