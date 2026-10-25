@@ -1,0 +1,48 @@
+# Local development only. Provides Postgres + Redis.
+# The app (turbo) is deployed separately — run `pnpm dev` on the host.
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: codingducks-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d codingducks"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    environment:
+      - POSTGRES_USER=dev
+      - POSTGRES_PASSWORD=dev
+      - POSTGRES_DB=codingducks
+    networks:
+      - codingducks-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: codingducks-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes --maxmemory 256mb
+    networks:
+      - codingducks-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  codingducks-network:
+    driver: bridge

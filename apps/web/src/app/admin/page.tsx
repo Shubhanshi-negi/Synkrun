@@ -1,0 +1,106 @@
+"use client";
+
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { CheckCircle, Clock, FileCode2, XCircle } from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { useTRPC } from "~/trpc/react";
+
+export default function AdminPage() {
+  const trpc = useTRPC();
+
+  const { data: problems, isLoading } = useQuery(
+    trpc.problem.list.queryOptions({ limit: 100 }),
+  );
+
+  const totalProblems = problems?.total ?? 0;
+  const easyCount =
+    problems?.items.filter((p) => p.difficulty === "easy").length ?? 0;
+  const mediumCount =
+    problems?.items.filter((p) => p.difficulty === "medium").length ?? 0;
+  const hardCount =
+    problems?.items.filter((p) => p.difficulty === "hard").length ?? 0;
+
+  return (
+    <div className="p-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Manage problems, view statistics, and configure settings.
+        </p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Problems
+            </CardTitle>
+            <FileCode2 className="text-muted-foreground size-4" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isLoading ? "..." : totalProblems}
+            </div>
+            <p className="text-muted-foreground text-xs">Published problems</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Easy</CardTitle>
+            <CheckCircle className="size-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-500">
+              {isLoading ? "..." : easyCount}
+            </div>
+            <p className="text-muted-foreground text-xs">Beginner friendly</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Medium</CardTitle>
+            <Clock className="size-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-500">
+              {isLoading ? "..." : mediumCount}
+            </div>
+            <p className="text-muted-foreground text-xs">Intermediate level</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Hard</CardTitle>
+            <XCircle className="size-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-500">
+              {isLoading ? "..." : hardCount}
+            </div>
+            <p className="text-muted-foreground text-xs">Advanced challenges</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mt-8">
+        <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
+        <div className="flex gap-4">
+          <Link
+            href="/admin/problems"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+          >
+            <FileCode2 className="size-4" />
+            Manage Problems
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

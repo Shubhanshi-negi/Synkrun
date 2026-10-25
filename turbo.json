@@ -1,0 +1,71 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "topo": {
+      "dependsOn": ["^topo"]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".cache/tsbuildinfo.json", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "format": {
+      "outputs": [".cache/.prettiercache"],
+      "outputLogs": "new-only"
+    },
+    "lint": {
+      "dependsOn": ["^topo", "^build"],
+      "outputs": [".cache/.eslintcache"]
+    },
+    "typecheck": {
+      "dependsOn": ["^topo", "^build"],
+      "outputs": [".cache/tsbuildinfo.json"]
+    },
+    "clean": {
+      "cache": false
+    },
+    "//#clean": {
+      "cache": false
+    },
+    "push": {
+      "cache": false,
+      "interactive": true
+    },
+    "studio": {
+      "cache": false,
+      "persistent": true
+    },
+    "ui-add": {
+      "cache": false,
+      "interactive": true
+    }
+  },
+  "globalEnv": [
+    "POSTGRES_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_GITHUB_ID",
+    "BETTER_AUTH_GITHUB_SECRET",
+    "BETTER_AUTH_GOOGLE_ID",
+    "BETTER_AUTH_GOOGLE_SECRET",
+    "BASE_URL",
+    "PRODUCTION_URL",
+    "JUDGE_API_URL",
+    "JUDGE_API_TOKEN",
+    "R2_PUBLIC_URL",
+    "MISTRAL_API_KEY",
+    "R2_BUCKET",
+    "R2_ACCOUNT_ID",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+    "R2_ENDPOINT",
+    "ALLOWED_WS_ORIGINS",
+    "NEXT_PUBLIC_BASE_URL",
+    "NEXT_PUBLIC_SOCKET_URL",
+    "PORT"
+  ],
+  "globalPassThroughEnv": ["NODE_ENV", "CI", "npm_lifecycle_event"]
+}

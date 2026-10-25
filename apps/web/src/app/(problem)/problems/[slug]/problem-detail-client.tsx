@@ -1,0 +1,454 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { ChevronLeft, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+import type { ConsoleResult, SubmissionDetail } from "./types";
+import type { Language } from "~/components/code-editor";
+import { authClient } from "~/auth/client";
+import { Button } from "~/components/ui/button";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "~/components/ui/resizable";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useIsMobile } from "~/hooks/use-is-mobile";
+import { track } from "~/lib/analytics";
+import { useTRPC } from "~/trpc/react";
+import { CodeEditorPanel } from "./_components/code-editor-panel";
+import { LeftPanel } from "./_components/left-panel";
+import { ProblemHeader } from "./_components/problem-header";
+import { SubmissionDetailDialog } from "./_components/submission-detail-dialog";
+import { TestCasePanel } from "./_components/test-case-panel";
+
+export function ProblemDetailClient() {
+  const trpc = useTRPC();
+  const params = useParams();
+  const slug = params.slug as string;
+  const { data: session } = authClient.useSession();
+  const isAuthenticated = !!session;
+  const isMobile = useIsMobile();
+
+  const [codes, setCodes] = useState<Record<string, string>>({});
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") return "py";
+    return (
+      (localStorage.getItem("problem-editor-language") as Language) || "py"
+    );
+  });
+  const [leftTab, setLeftTab] = useState("description");
+  const [activeTab, setActiveTab] = useState("problem");
+  const [consoleOutput, setConsoleOutput] = useState<ConsoleResult[]>([]);
+  // Tracks the last problem we loaded drafts for; a ref (not state) because it
+  // only gates the merge effect below and is never rendered.
+  const lastProblemIdRef = useRef<number | null>(null);
+  const [pollingId, setPollingId] = useState<number | null>(null);
+  const [pollingType, setPollingType] = useState<"run" | "submit" | null>(null);
+  const [submissionsLimit, setSubmissionsLimit] = useState(10);
+  const [selectedTestCase, setSelectedTestCase] = useState(0);
+  const [selectedOutputCase, setSelectedOutputCase] = useState(0);
+  const [customTestCase, setCustomTestCase] = useState<Record<
+    string,
+    string
+  > | null>(null);
+  const [selectedSubmission, setSelectedSubmission] =
+    useState<SubmissionDetail | null>(null);
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const draftsLoadedRef = useRef(false);
+
+  // --- Queries ---
+
+  const { data: problem, isLoading } = useQuery(
+    trpc.problem.bySlug.queryOptions({ slug }),
+  );
+
+  const { data: savedDrafts } = useQuery(
+    trpc.codeDraft.get.queryOptions(
+      { problemId: problem?.id! },
+      { enabled: !!problem?.id && isAuthenticated },
+    ),
+  );
+
+  const { data: submissions, refetch: refetchSubmissions } = useQuery(
+    trpc.submission.list.queryOptions(
+      { problemId: problem?.id, limit: submissionsLimit },
+      { enabled: !!problem?.id && isAuthenticated },
+    ),
+  );
+
+  const resultsQuery = useQuery(
+    trpc.submission.getResults.queryOptions(
+      { id: pollingId! },
+      {
+        enabled: !!pollingId,
+        refetchInterval: (query) => {
+          if (query.state.data?.status !== "running") return false;
+          return 1000;
+        },
+      },
+    ),
+  );
+
+  // --- Effects ---
+
+  // Handle polling completion
+  useEffect(() => {
+    if (resultsQuery.data && resultsQuery.data.status !== "running") {
+      const data = resultsQuery.data;
+      if (pollingType === "run") {
+        setConsoleOutput(data.results || []);
+        setActiveTab("console");
+        if (data.status === "judge_error") {
+          toast.error("Judge error — please try again");
+        } else {
+          toast.success("Execution completed");
+        }
+      } else if (pollingType === "submit") {
+        track("problem-submit-result", {
+          slug,
+          lang: data.lang,
+          status: data.status,
+        });
+        if (data.status === "accepted") {
+          toast.success("🎉 Accepted!", {
+            description: "Nice work — all test cases passed.",
+          });
+        } else {
+          toast.error(`Submission Failed: ${data.status.replace("_", " ")}`);
+        }
+        refetchSubmissions();
+        setLeftTab("submissions");
+        setSelectedSubmission(data);
+      }
+      setPollingId(null);
+      setPollingType(null);
+    }
+  }, [resultsQuery.data, pollingType, refetchSubmissions]);
+
+  // Merge starter code with saved drafts
+  useEffect(() => {
+    if (!problem) return;
+    if (isAuthenticated && savedDrafts === undefined) return;
+
+    if (
+      problem.id !== lastProblemIdRef.current ||
+      (!draftsLoadedRef.current && savedDrafts)
+    ) {
+      const starterCodes = problem.starterCode! || {};
+      const mergedCodes = { ...starterCodes, ...(savedDrafts || {}) };
+      setCodes(mergedCodes);
+
+      const availableLangs = Object.keys(mergedCodes);
+      if (availableLangs.length > 0 && !availableLangs.includes(language)) {
+        setLanguage(availableLangs[0] as Language);
+      }
+
+      lastProblemIdRef.current = problem.id;
+      draftsLoadedRef.current = true;
+    }
+    // This effect initializes editor state from async query data (problem +
+    // savedDrafts); the multiple setState calls are batched by React.
+  }, [problem, language, savedDrafts, isAuthenticated]);
+
+  // Remember the chosen language across problems / reloads.
+  useEffect(() => {
+    localStorage.setItem("problem-editor-language", language);
+  }, [language]);
+
+  const currentCode = codes[language] || "";
+
+  const setCode = (newCode: string) => {
+    setCodes((prev) => ({ ...prev, [language]: newCode }));
+  };
+
+  // Autosave
+  const saveDraftMutation = useMutation(
+    trpc.codeDraft.save.mutationOptions({
+      onSuccess: () => setSaveStatus("saved"),
+      onError: () => setSaveStatus("error"),
+    }),
+  );
+
+  useEffect(() => {
+    if (!isAuthenticated || !problem || !currentCode) return;
+    // Persist even when the code matches starter: reverting to starter
+    // must overwrite a previous draft, otherwise the stale draft is
+    // restored on reload. The upsert is idempotent so the worst case is
+    // one redundant write on a fresh, untouched problem.
+
+    setSaveStatus("saving");
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveDraftMutation.mutate({
+        problemId: problem.id,
+        lang: language,
+        code: currentCode,
+      });
+    }, 2000);
+
+    return () => clearTimeout(saveTimerRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCode, language, problem?.id, isAuthenticated]);
+
+  useEffect(() => {
+    if (saveStatus === "saved") {
+      const timer = setTimeout(() => setSaveStatus("idle"), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [saveStatus]);
+
+  // --- Mutations ---
+
+  const runMutation = useMutation(
+    trpc.submission.run.mutationOptions({
+      onSuccess: (data) => {
+        if (!data) return;
+        setPollingId(data.id);
+      },
+      onError: (err) => {
+        toast.error(err.message || "Execution failed");
+        setPollingType(null);
+      },
+    }),
+  );
+
+  const submitMutation = useMutation(
+    trpc.submission.submit.mutationOptions({
+      onSuccess: (data) => {
+        if (!data) return;
+        setPollingId(data.id);
+      },
+      onError: (err) => {
+        toast.error(err.message || "Submission failed");
+        setPollingType(null);
+      },
+    }),
+  );
+
+  const isRunning = runMutation.isPending || pollingType === "run";
+  const isSubmitting = submitMutation.isPending || pollingType === "submit";
+
+  const handleRun = () => {
+    if (!problem || !currentCode) return;
+    track("problem-run", { slug, lang: language });
+    setPollingType("run");
+    const sig = problem.functionSignature;
+    const customArgs =
+      customTestCase && sig?.params
+        ? sig.params.map((p) => customTestCase[p.name] ?? "")
+        : undefined;
+    // stdin problems (no signature) send raw custom input instead.
+    const customInput =
+      customTestCase && !sig?.params ? (customTestCase.stdin ?? "") : undefined;
+    runMutation.mutate({
+      problemId: problem.id,
+      code: currentCode,
+      lang: language,
+      ...(customArgs ? { customArgs } : {}),
+      ...(customInput != null ? { customInput } : {}),
+    });
+  };
+
+  const handleSubmit = () => {
+    if (!problem || !currentCode) return;
+    track("problem-submit", { slug, lang: language });
+    setPollingType("submit");
+    submitMutation.mutate({
+      problemId: problem.id,
+      code: currentCode,
+      lang: language,
+    });
+  };
+
+  // --- Loading / Error states ---
+
+  if (isLoading) {
+    return (
+      <div className="bg-background flex h-screen items-center justify-center">
+        <Loader2 className="text-primary size-10 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!problem) {
+    return (
+      <div className="bg-background flex h-screen flex-col items-center justify-center gap-6 p-4 text-center">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold tracking-tight">404</h1>
+          <p className="text-muted-foreground text-xl font-medium">
+            Problem not found
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/problems">
+            <ChevronLeft className="mr-2 size-4" />
+            Back to Problems
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const availableLanguages = Object.keys(problem.starterCode! || {});
+
+  // --- Render ---
+
+  const leftPanel = (
+    <LeftPanel
+      problem={problem}
+      submissions={submissions}
+      leftTab={leftTab}
+      isAuthenticated={isAuthenticated}
+      canLoadMore={(submissions?.length ?? 0) === submissionsLimit}
+      onLoadMore={() => setSubmissionsLimit((l) => l + 10)}
+      onLeftTabChange={setLeftTab}
+      onSelectSubmission={setSelectedSubmission}
+    />
+  );
+
+  const editorPanel = (
+    <CodeEditorPanel
+      code={currentCode}
+      onCodeChange={setCode}
+      language={language}
+      onLanguageChange={(next) => {
+        if (next !== language) {
+          track("problem-language-switch", { slug, from: language, to: next });
+        }
+        setLanguage(next);
+      }}
+      availableLanguages={availableLanguages}
+      saveStatus={saveStatus}
+      hasLastSubmission={!!submissions?.some((s) => s.lang === language)}
+      onRetrieveLastSubmission={() => {
+        const lastSub = submissions?.find((s) => s.lang === language);
+        if (lastSub?.code) {
+          setCode(lastSub.code);
+          toast.success("Last submission loaded");
+        }
+      }}
+      onResetToDefault={() => {
+        const starterCode = problem.starterCode?.[language] ?? "";
+        setCode(starterCode);
+        toast.success("Code reset to default");
+      }}
+      onRun={handleRun}
+      onSubmit={handleSubmit}
+    />
+  );
+
+  const testPanel = (
+    <TestCasePanel
+      problem={problem}
+      activeTab={activeTab}
+      onActiveTabChange={setActiveTab}
+      consoleOutput={consoleOutput}
+      selectedTestCase={selectedTestCase}
+      onSelectTestCase={setSelectedTestCase}
+      selectedOutputCase={selectedOutputCase}
+      onSelectOutputCase={setSelectedOutputCase}
+      customTestCase={customTestCase}
+      onCustomTestCaseChange={setCustomTestCase}
+    />
+  );
+
+  const tabTriggerClass =
+    "data-[state=active]:border-primary text-muted-foreground data-[state=active]:text-foreground rounded-none border-b-2 border-transparent text-xs font-bold tracking-wider uppercase data-[state=active]:bg-transparent";
+
+  return (
+    <>
+      <ProblemHeader
+        isRunning={isRunning}
+        isSubmitting={isSubmitting}
+        isAuthenticated={isAuthenticated}
+        onRun={handleRun}
+        onSubmit={handleSubmit}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        {isMobile ? (
+          <Tabs defaultValue="problem" className="flex h-full flex-col">
+            <TabsList className="grid h-10 w-full shrink-0 grid-cols-3 rounded-none border-b bg-transparent p-0">
+              <TabsTrigger value="problem" className={tabTriggerClass}>
+                Problem
+              </TabsTrigger>
+              <TabsTrigger value="code" className={tabTriggerClass}>
+                Code
+              </TabsTrigger>
+              <TabsTrigger value="tests" className={tabTriggerClass}>
+                Tests
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent
+              value="problem"
+              className="bg-card/30 m-0 flex-1 overflow-hidden"
+            >
+              {leftPanel}
+            </TabsContent>
+            <TabsContent value="code" className="m-0 flex-1 overflow-hidden">
+              {editorPanel}
+            </TabsContent>
+            <TabsContent value="tests" className="m-0 flex-1 overflow-hidden">
+              {testPanel}
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <ResizablePanelGroup
+            direction="horizontal"
+            autoSaveId="problem-layout-h"
+          >
+            {/* Left Panel */}
+            <ResizablePanel
+              defaultSize={40}
+              minSize={20}
+              className="bg-card/30"
+            >
+              {leftPanel}
+            </ResizablePanel>
+
+            <ResizableHandle
+              withHandle
+              className="bg-border/50 hover:bg-primary/30 w-1 transition-colors"
+            />
+
+            {/* Right Panel */}
+            <ResizablePanel defaultSize={60} minSize={30}>
+              <ResizablePanelGroup
+                direction="vertical"
+                autoSaveId="problem-layout-v"
+              >
+                <ResizablePanel defaultSize={65} minSize={30}>
+                  {editorPanel}
+                </ResizablePanel>
+
+                <ResizableHandle
+                  withHandle
+                  className="bg-border/50 hover:bg-primary/30 h-1 transition-colors"
+                />
+
+                <ResizablePanel defaultSize={35} minSize={10}>
+                  {testPanel}
+                </ResizablePanel>
+              </ResizablePanelGroup>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        )}
+      </div>
+
+      {/* Submission Detail Dialog */}
+      <SubmissionDetailDialog
+        submission={selectedSubmission}
+        onClose={() => setSelectedSubmission(null)}
+      />
+    </>
+  );
+}
