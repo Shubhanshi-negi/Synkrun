@@ -1,7 +1,9 @@
-<p align="left">
+<p align="middle">
   <img src="sen/image.png" alt="Synkrun" width="500">
 </p>
-
+<p align="middle">
+  <a href="https://synkrun.vercel.app/">🌐 Web App</a>
+</p>
 <p>Your space to practice, build, and collaborate.</p>
 
 A real-time coding platform for solving problems, pair-programming, and learning systems by building them. Bundles a LeetCode-style judge, collaborative coding sessions (Ducklets), a drag-and-drop System Design puzzle game, and an in-browser playground in a single Turborepo monorepo.
