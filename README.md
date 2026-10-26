@@ -1,4 +1,15 @@
-# Synkrun
+<table>
+  <tr>
+    <td valign="middle" width="76">
+      <img src="docs/assets/synkrun-icon.png" width="64" alt="Synkrun">
+    </td>
+    <td valign="middle">
+      <h1>Synkrun</h1>
+    </td>
+  </tr>
+</table>
+
+<p>Your space to practice, build, and collaborate.</p>
 
 A real-time coding platform for solving problems, pair-programming, and learning systems by building them. Bundles a LeetCode-style judge, collaborative coding sessions (Ducklets), a drag-and-drop System Design puzzle game, and an in-browser playground in a single Turborepo monorepo.
 
