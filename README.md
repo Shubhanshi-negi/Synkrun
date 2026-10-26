@@ -1,15 +1,16 @@
-<table>
-  <tr>
-    <td valign="middle" width="76">
-      <img src="docs/migration/assets/synkrun-icon.png"
-     width="64"
-     alt="Synkrun logo">
-    </td>
-    <td valign="middle">
-      <h1>Synkrun</h1>
-    </td>
-  </tr>
-</table>
+<p align="middle">
+  <img src="docs/migration/assets/synkrun-icon.png"
+       alt="Synkrun logo"
+       width="52"
+       align="middle">
+  <span style="font-size: 36px; font-weight: 800; color: #FFFFFF;">
+    Synk<span style="color: #F04491; font-style: italic;">run</span>
+  </span>
+</p>
+
+<p align="left">
+  Your space to practice, build, and collaborate.
+</p>
 
 <p>Your space to practice, build, and collaborate.</p>
 
