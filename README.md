@@ -1,13 +1,6 @@
 <p align="left">
-  <img
-    src="docs/migration/assets/synkrun-icon.png"
-    width="76"
-    alt="Synkrun icon"
-    valign="middle"
-  />
- <h1>
-  <span style="color: #FFFFFF;">Synk</span><span style="color: #D95DA8;"><em>run</em></span>
-</h1>
+  <img src="sen/image.png" alt="Synkrun" width="500">
+</p>
 
 <p>Your space to practice, build, and collaborate.</p>
 
