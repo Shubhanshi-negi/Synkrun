@@ -1,10 +1,12 @@
-<p align="middle">
-  <img src="docs/migration/assets/synkrun-icon.png"
-       alt="Synkrun logo"
-       width="52"
-       align="middle">
-  <span style="font-size: 36px; font-weight: 800; color: #FFFFFF;">
-    Synk<span style="color: #F04491; font-style: italic;">run</span>
+<p align="left">
+  <img
+    src="docs/migration/assets/synkrun-icon.png"
+    width="76"
+    alt="Synkrun icon"
+    valign="middle"
+  />
+  <span>
+    <strong>Synk</strong><em>run</em>
   </span>
 </p>
 
