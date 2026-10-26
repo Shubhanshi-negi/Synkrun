@@ -5,10 +5,9 @@
     alt="Synkrun icon"
     valign="middle"
   />
-  <span>
-    <strong>Synk</strong><em>run</em>
-  </span>
-</p>
+ <h1>
+  <span style="color: #FFFFFF;">Synk</span><span style="color: #D95DA8;"><em>run</em></span>
+</h1>
 
 <p>Your space to practice, build, and collaborate.</p>
 
