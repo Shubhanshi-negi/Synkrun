@@ -1,7 +1,9 @@
 <table>
   <tr>
     <td valign="middle" width="76">
-      <img src="docs/assets/synkrun-icon.png" width="64" alt="Synkrun">
+      <img src="docs/migration/assets/synkrun-icon.png"
+     width="64"
+     alt="Synkrun logo">
     </td>
     <td valign="middle">
       <h1>Synkrun</h1>
